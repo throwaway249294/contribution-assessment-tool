@@ -1,0 +1,48 @@
+
+
+.main {
+    display: flex;
+    flex-direction: column;
+    margin-left: 15vw;
+    margin-right: 15vw;
+}
+
+.headers {
+
+    display: flex;
+    flex-direction: row;
+}
+
+.headingbuttons {
+
+    justify-content: space-between;
+    padding: 25px;
+    border: 1px solid black;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.team {
+
+    padding: 25px;
+    border: 1px solid black;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    
+}
+
+.documents {
+
+    padding: 25px;
+    border: 1px solid black;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.repository {
+
+    padding: 25px;
+    border: 1px solid black;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
