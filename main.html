@@ -1,44 +1,197 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evaluation Tool</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-    <section class="headers">
-        <h1>heading placeholder</h1>
-    </section>
-    <section class="main">
+
+    <header class="top_header">
+        <div class="ilovepotatoes">
+            <span class="back_arrow">‹</span>
+            <span>Assessments</span>
+            <span class="slash">/</span>
+            <strong>New assessment</strong>
+        </div>
+
+        <div class="profile">
+            Weighting - COS40005 profile
+        </div>
+    </header>
+
+
+    <main class="main">
+
         <section class="headingbuttons">
-            <button>STEP 1<br>Team & documents</button>
-            <button>STEP 2<br>Repository</button>
-            <button>STEP 3<br>Review & run</button>
+
+            <button class="step active">
+                <span class="step_number">STEP 1</span>
+                <span class="step_title">Team &amp; documents</span>
+            </button>
+
+            <button class="step">
+                <span class="step_number">STEP 2</span>
+                <span class="step_title">Repository</span>
+            </button>
+
+            <button class="step">
+                <span class="step_number">STEP 3</span>
+                <span class="step_title">Review &amp; run</span>
+            </button>
+
         </section>
-        <section class="team">
+
+        <section class="card team">
+
             <h2>Team</h2>
-            <h3>Members are read from the unit roster. Each must map to a repository indentity before the run starts.</h3>
-            <section class="insertboxes">
-                <h4>unit</h4>
-                <h4>unit</h4>
-                <section class="insertboxesinput">
-                    <textarea></textarea>
-                    <textarea></textarea>
-                </section>
-            </section>
+
+            <p class="description">
+                Members are read from the unit roster. Each must map to a repository identity before the run starts.
+            </p>
+
+            <div class="input_row">
+
+                <div class="input_group">
+                    <label>Unit</label>
+                    <input type="text" value="COS40005">
+                </div>
+
+                <div class="input_group">
+                    <label>Team</label>
+                    <input type="text" value="Team 04">
+                </div>
+
+            </div>
+
         </section>
-        <section class="documents">
+
+        <section class="card documents">
+
             <h2>Documents</h2>
-            <h3>Sprint reports, contribution summaries, reflection reports. These supply the claims that are checked against the repository.</h3>
+
+            <p class="description">
+                Sprint reports, contribution summaries, reflection reports. These supply the claims that are checked against the repository.
+            </p>
+
+
+            <div class="upload_box">
+
+                <div class="upload_icon">↥</div>
+
+                <strong>Drop files, or browse</strong>
+
+                <span class="upload_info">
+                    PDF, DOCX, MD • up to 20 files
+                </span>
+
+                <button class="browse_button">
+                    Browse files
+                </button>
+
+            </div>
+
+            <div class="file_list">
+
+                <div class="file">
+                    <div class="file_left">
+                        <span class="file_icon"></span>
+                        <span>Sprint-3-report-Team04.pdf</span>
+                    </div>
+
+                    <span class="file_size">412 KB</span>
+
+                    <button class="remove">×</button>
+                </div>
+
+
+                <div class="file">
+                    <div class="file_left">
+                        <span class="file_icon"></span>
+                        <span>Contribution-summary-S3.docx</span>
+                    </div>
+
+                    <span class="file_size">88 KB</span>
+
+                    <button class="remove">×</button>
+                </div>
+
+
+                <div class="file">
+                    <div class="file_left">
+                        <span class="file_icon"></span>
+                        <span>Reflection-reports-combined.pdf</span>
+                    </div>
+
+                    <span class="file_size">1.2 MB</span>
+
+                    <button class="remove">×</button>
+                </div>
+
+            </div>
+
+            <div class="token_box">
+
+                <div class="token_header">
+                    <strong>Input budget</strong>
+                    <span>182,400 / 400,000 tokens</span>
+                </div>
+
+                <div class="progress">
+                    <div class="progress_fill"></div>
+                </div>
+
+                <p>
+                    The cap protects output quality, not cost. Oversized raw input degrades claim extraction, so documents are chunked and summarised in stages rather than passed whole.
+                </p>
+
+            </div>
+
         </section>
-        <section class="repository">
+
+        <section class="card repository">
+
             <h2>Repository</h2>
-            <h3>Members are read from the unit roster. Each must map to a repository indentity before the run starts.</h3>
+
+            <p class="description">
+                Read-only access. Commits, pull requests, reviews and issue activity supply the evidence side.
+            </p>
+
+
+            <div class="repository_box">
+
+                <div class="repository_status"></div>
+
+                <div class="repository_info">
+                    <strong>cos40005 · 2026 / team-04</strong>
+                    <span>Connected · read-only · 6 contributors matched</span>
+                </div>
+
+                <button class="change_button">
+                    Change
+                </button>
+
+            </div>
+
         </section>
-        <section class="submit">
+
+        <div class="bottom_row">
+
+            <p>
+                Documents and repository data stay on institutional hardware.
+                Nothing is sent to an external model provider.
+            </p>
+
             <button class="submitbutton">
                 Run assessment
+                <span></span>
             </button>
-        </section>
-    </section>
+
+        </div>
+
+    </main>
+
 </body>
 </html>
