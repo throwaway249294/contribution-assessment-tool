@@ -1,197 +1,485 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evaluation Tool</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
+* {
+    box-sizing: border-box;
+}
 
-<body>
+body {
+    margin: 0;
+    background: #ffffff;
+    color: #252525;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+}
 
-    <header class="top_header">
-        <div class="ilovepotatoes">
-            <span class="back_arrow">‹</span>
-            <span>Assessments</span>
-            <span class="slash">/</span>
-            <strong>New assessment</strong>
-        </div>
+.top_header {
+    height: 64px;
+    border-bottom: 1px solid #dedede;
 
-        <div class="profile">
-            ⚙ &nbsp; Weighting - COS40005 profile
-        </div>
-    </header>
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
+    padding: 0 38px;
+}
 
-    <main class="main">
+.ilovepotatoes {
+    display: flex;
+    align-items: center;
+    gap: 9px;
 
-        <section class="headingbuttons">
+    color: #555;
+}
 
-            <button class="step active">
-                <span class="step_number">STEP 1</span>
-                <span class="step_title">Team &amp; documents</span>
-            </button>
+.ilovepotatoes strong {
+    color: #222;
+    font-weight: 600;
+}
 
-            <button class="step">
-                <span class="step_number">STEP 2</span>
-                <span class="step_title">Repository</span>
-            </button>
+.back_arrow {
+    font-size: 20px;
+    color: #777;
+    margin-right: 3px;
+}
 
-            <button class="step">
-                <span class="step_number">STEP 3</span>
-                <span class="step_title">Review &amp; run</span>
-            </button>
+.slash {
+    color: #aaa;
+}
 
-        </section>
+.profile {
+    border: 1px solid #dedede;
+    padding: 8px 12px;
 
-        <section class="card team">
+    font-size: 11px;
+    color: #444;
 
-            <h2>Team</h2>
+    background: #fff;
+}
 
-            <p class="description">
-                Members are read from the unit roster. Each must map to a repository identity before the run starts.
-            </p>
+.main {
+    width: 72%;
+    max-width: 900px;
 
-            <div class="input_row">
+    margin: 28px auto 40px;
+}
 
-                <div class="input_group">
-                    <label>Unit</label>
-                    <input type="text" value="COS40005">
-                </div>
+.headingbuttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
 
-                <div class="input_group">
-                    <label>Team</label>
-                    <input type="text" value="Team 04">
-                </div>
+    gap: 8px;
+    margin-bottom: 10px;
+}
 
-            </div>
+.step {
+    height: 69px;
 
-        </section>
+    text-align: left;
 
-        <section class="card documents">
+    padding: 12px 16px;
 
-            <h2>Documents</h2>
+    background: #fff;
+    border: 1px solid #d5d5d5;
 
-            <p class="description">
-                Sprint reports, contribution summaries, reflection reports. These supply the claims that are checked against the repository.
-            </p>
+    cursor: pointer;
+}
 
+.step.active {
+    border-color: #555;
+    background: #f7f7f7;
+}
 
-            <div class="upload_box">
+.step_number {
+    display: block;
 
-                <div class="upload_icon">↥</div>
+    font-size: 9px;
+    font-weight: 500;
 
-                <strong>Drop files, or browse</strong>
+    color: #666;
 
-                <span class="upload_info">
-                    PDF, DOCX, MD • up to 20 files
-                </span>
+    margin-bottom: 7px;
+}
 
-                <button class="browse_button">
-                    Browse files
-                </button>
+.step_title {
+    display: block;
 
-            </div>
+    font-size: 12px;
+    font-weight: 500;
 
-            <div class="file_list">
+    color: #333;
+}
 
-                <div class="file">
-                    <div class="file_left">
-                        <span class="file_icon"></span>
-                        <span>Sprint-3-report-Team04.pdf</span>
-                    </div>
+.card {
+    border: 1px solid #d5d5d5;
 
-                    <span class="file_size">412 KB</span>
+    padding: 18px 20px;
 
-                    <button class="remove">×</button>
-                </div>
+    margin-bottom: 10px;
 
+    background: #fff;
+}
 
-                <div class="file">
-                    <div class="file_left">
-                        <span class="file_icon"></span>
-                        <span>Contribution-summary-S3.docx</span>
-                    </div>
+.card h2 {
+    font-size: 13px;
+    font-weight: 600;
 
-                    <span class="file_size">88 KB</span>
+    margin: 0 0 7px;
 
-                    <button class="remove">×</button>
-                </div>
+    color: #252525;
+}
 
+.description {
+    margin: 0 0 17px;
 
-                <div class="file">
-                    <div class="file_left">
-                        <span class="file_icon"></span>
-                        <span>Reflection-reports-combined.pdf</span>
-                    </div>
+    font-size: 10px;
+    line-height: 1.5;
 
-                    <span class="file_size">1.2 MB</span>
+    color: #666;
+}
 
-                    <button class="remove">×</button>
-                </div>
+.input_row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
 
-            </div>
+    gap: 10px;
+}
 
-            <div class="token_box">
+.input_group {
+    display: flex;
+    flex-direction: column;
+}
 
-                <div class="token_header">
-                    <strong>Input budget</strong>
-                    <span>182,400 / 400,000 tokens</span>
-                </div>
+.input_group label {
+    font-size: 9px;
+    font-weight: 600;
 
-                <div class="progress">
-                    <div class="progress_fill"></div>
-                </div>
+    text-transform: uppercase;
 
-                <p>
-                    The cap protects output quality, not cost. Oversized raw input degrades claim extraction, so documents are chunked and summarised in stages rather than passed whole.
-                </p>
+    color: #555;
 
-            </div>
+    margin-bottom: 5px;
+}
 
-        </section>
+.input_group input {
+    height: 35px;
 
-        <section class="card repository">
+    border: 1px solid #d6d6d6;
 
-            <h2>Repository</h2>
+    padding: 0 10px;
 
-            <p class="description">
-                Read-only access. Commits, pull requests, reviews and issue activity supply the evidence side.
-            </p>
+    font-size: 11px;
 
+    color: #333;
 
-            <div class="repository_box">
+    outline: none;
+}
 
-                <div class="repository_status"></div>
+.input_group input:focus {
+    border-color: #888;
+}
 
-                <div class="repository_info">
-                    <strong>cos40005 · 2026 / team-04</strong>
-                    <span>Connected · read-only · 6 contributors matched</span>
-                </div>
+.upload_box {
+    height: 120px;
 
-                <button class="change_button">
-                    Change
-                </button>
+    border: 1px dashed #aaa;
 
-            </div>
+    background: #fafafa;
 
-        </section>
+    display: flex;
+    flex-direction: column;
 
-        <div class="bottom_row">
+    align-items: center;
+    justify-content: center;
 
-            <p>
-                Documents and repository data stay on institutional hardware.
-                Nothing is sent to an external model provider.
-            </p>
+    margin-bottom: 10px;
+}
 
-            <button class="submitbutton">
-                Run assessment
-                <span></span>
-            </button>
+.upload_icon {
+    font-size: 19px;
+    color: #777;
 
-        </div>
+    margin-bottom: 5px;
+}
 
-    </main>
+.upload_box strong {
+    font-size: 10px;
+    font-weight: 600;
 
-</body>
-</html>
+    margin-bottom: 4px;
+}
+
+.upload_info {
+    font-size: 9px;
+    color: #777;
+
+    margin-bottom: 8px;
+}
+
+.browse_button {
+    border: 1px solid #aaa;
+
+    background: #fff;
+
+    padding: 5px 12px;
+
+    font-size: 9px;
+
+    cursor: pointer;
+}
+
+.file_list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    margin-bottom: 10px;
+}
+
+.file {
+    min-height: 38px;
+
+    border: 1px solid #dedede;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 8px;
+
+    background: #fff;
+}
+
+.file_left {
+    display: flex;
+    align-items: center;
+
+    flex: 1;
+
+    gap: 8px;
+
+    font-size: 10px;
+}
+
+.file_icon {
+    width: 13px;
+    height: 15px;
+
+    border: 1px solid #aaa;
+
+    background: #f5f5f5;
+}
+
+.file_size {
+    color: #777;
+
+    font-size: 9px;
+
+    margin-right: 10px;
+}
+
+.remove {
+    width: 25px;
+    height: 25px;
+
+    border: 1px solid #ddd;
+
+    background: #fff;
+
+    font-size: 15px;
+    line-height: 20px;
+
+    color: #777;
+
+    cursor: pointer;
+}
+
+.token_box {
+    border: 1px solid #d0d0d0;
+
+    background: #fafafa;
+
+    padding: 9px;
+
+    margin-top: 5px;
+}
+
+.token_header {
+    display: flex;
+    justify-content: space-between;
+
+    margin-bottom: 5px;
+
+    font-size: 9px;
+}
+
+.token_header strong {
+    font-weight: 600;
+}
+
+.token_header span {
+    color: #666;
+}
+
+.progress {
+    width: 100%;
+    height: 6px;
+
+    background: #e5e5e5;
+
+    margin-bottom: 7px;
+}
+
+.progress_fill {
+    width: 45.6%;
+    height: 100%;
+
+    background: #777;
+}
+
+.token_box p {
+    margin: 0;
+
+    font-size: 8px;
+    line-height: 1.4;
+
+    color: #666;
+}
+
+.repository_box {
+    min-height: 48px;
+
+    border: 1px solid #dedede;
+
+    display: flex;
+    align-items: center;
+
+    padding: 7px 9px;
+}
+
+.repository_status {
+    width: 19px;
+    height: 19px;
+
+    border: 2px solid #aaa;
+
+    border-radius: 50%;
+
+    margin-right: 12px;
+}
+
+.repository_info {
+    display: flex;
+    flex-direction: column;
+
+    flex: 1;
+}
+
+.repository_info strong {
+    font-size: 9px;
+
+    font-weight: 600;
+
+    margin-bottom: 3px;
+}
+
+.repository_info span {
+    font-size: 8px;
+
+    color: #777;
+}
+
+.change_button {
+    background: #fff;
+
+    border: 1px solid #ddd;
+
+    padding: 7px 12px;
+
+    font-size: 9px;
+
+    color: #555;
+
+    cursor: pointer;
+}
+
+.bottom_row {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    margin-top: 16px;
+}
+
+.bottom_row p {
+    margin: 0;
+
+    font-size: 8px;
+
+    color: #777;
+}
+
+.submitbutton {
+    border: none;
+
+    background: #222;
+    color: #fff;
+
+    padding: 11px 16px;
+
+    font-size: 10px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.submitbutton span {
+    margin-left: 8px;
+
+    font-size: 13px;
+}
+
+.step:hover {
+    background: #f7f7f7;
+}
+
+.browse_button:hover,
+.change_button:hover,
+.remove:hover {
+    background: #f3f3f3;
+}
+
+.submitbutton:hover {
+    background: #444;
+}
+
+@media (max-width: 700px) {
+
+    .main {
+        width: 94%;
+    }
+
+    .top_header {
+        padding: 0 15px;
+    }
+
+    .profile {
+        display: none;
+    }
+
+    .headingbuttons {
+        grid-template-columns: 1fr;
+    }
+
+    .input_row {
+        grid-template-columns: 1fr;
+    }
+
+    .bottom_row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .submitbutton {
+        align-self: flex-end;
+    }
+}
