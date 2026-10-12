@@ -11,15 +11,15 @@
 
     <header class="top_header">
         <div class="ilovepotatoes">
-            <span class="back_arrow">‹</span>
-            <span>Assessments</span>
+            <a href="home.html" class="back_arrow">‹</a>
+            <a href="home.html" class="back_link">Assessments</a>
             <span class="slash">/</span>
             <strong>New assessment</strong>
         </div>
 
-        <div class="profile">
+        <a href="configuration.html" class="profile configuration_profile_link">
             ⚙ &nbsp; Weighting - COS40005 profile
-        </div>
+        </a>
     </header>
 
 
@@ -184,7 +184,7 @@
                 Nothing is sent to an external model provider.
             </p>
 
-            <button class="submitbutton">
+            <button class="submitbutton" type="button" onclick="window.location.href='processing.html'">
                 Run assessment
                 <span></span>
             </button>

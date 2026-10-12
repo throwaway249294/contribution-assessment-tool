@@ -1,0 +1,328 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refine Assessment</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="top_header">
+        <div class="ilovepotatoes">
+            <a href="home.html" class="back_arrow">‹</a>
+            <a href="home.html" class="back_link">Assessments</a>
+            <span class="slash">/</span>
+            <a href="assessment.html" class="back_link">Assessment</a>
+            <span class="slash">/</span>
+            <strong>Refinement</strong>
+        </div>
+
+        <a href="configuration.html" class="profile configuration_profile_link">
+            ⚙ &nbsp; Weighting - COS40005 profile
+        </a>
+    </header>
+
+    <main class="refinement_main">
+
+        <div class="refinement_heading">
+            <div>
+                <p class="refinement_eyebrow">COS40005 / Team 04 / Sprint 3</p>
+                <h1>Refine assessment</h1>
+                <p class="refinement_description">
+                    Review the suggested scores and make adjustments based on the available evidence.
+                </p>
+            </div>
+
+            <span class="refinement_status">Instructor review</span>
+        </div>
+
+        <div class="refinement_layout">
+
+            <div class="refinement_left">
+
+                <section class="refinement_panel">
+                    <div class="refinement_panel_heading">
+                        <h2>Score adjustments</h2>
+                        <span>Scale: 0–100</span>
+                    </div>
+
+                    <p class="refinement_help">
+                        Adjust each criterion using the score field or slider.
+                        Changes are reflected in the revised score.
+                    </p>
+
+                    <div class="refinement_criterion">
+                        <div class="refinement_criterion_heading">
+                            <div>
+                                <h3>Code contribution</h3>
+                                <p>Commits, implementation changes and code ownership.</p>
+                            </div>
+                            <input class="refinement_score_input" type="number" min="0" max="100" value="85" data_score="code">
+                        </div>
+                        <input class="refinement_slider" type="range" min="0" max="100" value="85" data_slider="code">
+                    </div>
+
+                    <div class="refinement_criterion">
+                        <div class="refinement_criterion_heading">
+                            <div>
+                                <h3>Collaboration</h3>
+                                <p>Pull requests, reviews and shared development activity.</p>
+                            </div>
+                            <input class="refinement_score_input" type="number" min="0" max="100" value="78" data_score="collaboration">
+                        </div>
+                        <input class="refinement_slider" type="range" min="0" max="100" value="78" data_slider="collaboration">
+                    </div>
+
+                    <div class="refinement_criterion">
+                        <div class="refinement_criterion_heading">
+                            <div>
+                                <h3>Documentation</h3>
+                                <p>Sprint reports, contribution summaries and reflections.</p>
+                            </div>
+                            <input class="refinement_score_input" type="number" min="0" max="100" value="88" data_score="documentation">
+                        </div>
+                        <input class="refinement_slider" type="range" min="0" max="100" value="88" data_slider="documentation">
+                    </div>
+
+                    <div class="refinement_criterion">
+                        <div class="refinement_criterion_heading">
+                            <div>
+                                <h3>Consistency of evidence</h3>
+                                <p>Alignment between submitted claims and repository records.</p>
+                            </div>
+                            <input class="refinement_score_input" type="number" min="0" max="100" value="76" data_score="consistency">
+                        </div>
+                        <input class="refinement_slider" type="range" min="0" max="100" value="76" data_slider="consistency">
+                    </div>
+
+                </section>
+
+                <section class="refinement_panel">
+                    <div class="refinement_panel_heading">
+                        <h2>Instructor justification</h2>
+                        <span>Review notes</span>
+                    </div>
+
+                    <label class="refinement_label" for="refinement_notes">
+                        Explanation for adjustments
+                    </label>
+
+                    <textarea id="refinement_notes" class="refinement_textarea" rows="6" placeholder="Explain any changes made to the suggested scores..."></textarea>
+
+                    <p class="refinement_field_help">
+                        Record the evidence and reasoning supporting your adjustments.
+                    </p>
+                </section>
+
+                <section class="refinement_panel">
+                    <div class="refinement_panel_heading">
+                        <h2>Assessment decision</h2>
+                    </div>
+
+                    <div class="refinement_decisions">
+                        <label class="refinement_decision">
+                            <input type="radio" name="review_decision" value="approved" checked>
+                            <div>
+                                <strong>Approve assessment</strong>
+                                <p>Accept the revised assessment for final review.</p>
+                            </div>
+                        </label>
+
+                        <label class="refinement_decision">
+                            <input type="radio" name="review_decision" value="further_review">
+                            <div>
+                                <strong>Requires further review</strong>
+                                <p>Keep the assessment pending until more evidence is available.</p>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+
+            </div>
+
+            <aside class="refinement_right">
+
+                <section class="refinement_panel refinement_summary">
+                    <h2>Score summary</h2>
+
+                    <div class="refinement_score_display">
+                        <span>Revised overall score</span>
+                        <div>
+                            <strong id="refinement_total">82</strong>
+                            <span>/ 100</span>
+                        </div>
+                    </div>
+
+                    <div class="refinement_comparison">
+                        <div>
+                            <span>Original score</span>
+                            <strong>82 / 100</strong>
+                        </div>
+
+                        <div>
+                            <span>Revised score</span>
+                            <strong id="refinement_revised">82 / 100</strong>
+                        </div>
+
+                        <div>
+                            <span>Difference</span>
+                            <strong id="refinement_difference">0 points</strong>
+                        </div>
+                    </div>
+
+                    <p class="refinement_summary_note">
+                        The prototype calculates an equal-weight average of the four displayed criteria.
+                    </p>
+                </section>
+
+                <section class="refinement_panel">
+                    <h2>Assessment information</h2>
+
+                    <div class="refinement_info_row">
+                        <span>Unit</span>
+                        <strong>COS40005</strong>
+                    </div>
+
+                    <div class="refinement_info_row">
+                        <span>Team</span>
+                        <strong>Team 04</strong>
+                    </div>
+
+                    <div class="refinement_info_row">
+                        <span>Sprint</span>
+                        <strong>Sprint 3</strong>
+                    </div>
+
+                    <div class="refinement_info_row">
+                        <span>Contributors</span>
+                        <strong>6</strong>
+                    </div>
+
+                    <div class="refinement_info_row">
+                        <span>Review status</span>
+                        <strong>Pending</strong>
+                    </div>
+                </section>
+
+            </aside>
+
+        </div>
+
+        <div class="refinement_footer">
+            <a href="assessment.html" class="refinement_secondary_button">← Back to assessment</a>
+
+            <div class="refinement_footer_actions">
+                <button type="button" class="refinement_secondary_button" id="refinement_reset">
+                    Reset scores
+                </button>
+                <button type="button" class="refinement_primary_button" id="refinement_save">
+                    Save refinement
+                </button>
+            </div>
+        </div>
+
+        <p class="refinement_message" id="refinement_message" role="status"></p>
+
+    </main>
+
+    <script>
+        const original_scores = {
+            code: 85,
+            collaboration: 78,
+            documentation: 88,
+            consistency: 76
+        };
+
+        const original_total = 82;
+        const score_inputs = document.querySelectorAll(".refinement_score_input");
+        const score_sliders = document.querySelectorAll(".refinement_slider");
+
+        function clamp_score(value) {
+            return Math.max(0, Math.min(100, Number(value) || 0));
+        }
+
+        function update_total() {
+            let sum = 0;
+
+            score_inputs.forEach(function(input) {
+                sum += clamp_score(input.value);
+            });
+
+            const total = Math.round(sum / score_inputs.length);
+            const difference = total - original_total;
+
+            document.getElementById("refinement_total").textContent = total;
+            document.getElementById("refinement_revised").textContent = total + " / 100";
+            document.getElementById("refinement_difference").textContent =
+                (difference > 0 ? "+" : "") + difference + " points";
+        }
+
+        score_inputs.forEach(function(input) {
+            input.addEventListener("input", function() {
+                const slider = document.querySelector(
+                    '[data_slider="' + input.dataset.score + '"]'
+                );
+
+                if (input.value !== "") {
+                    slider.value = clamp_score(input.value);
+                    update_total();
+                }
+            });
+
+            input.addEventListener("change", function() {
+                input.value = clamp_score(input.value);
+                update_total();
+            });
+        });
+
+        score_sliders.forEach(function(slider) {
+            slider.addEventListener("input", function() {
+                const input = document.querySelector(
+                    '[data_score="' + slider.dataset.slider + '"]'
+                );
+
+                input.value = slider.value;
+                update_total();
+            });
+        });
+
+        document.getElementById("refinement_reset").addEventListener("click", function() {
+            score_inputs.forEach(function(input) {
+                const value = original_scores[input.dataset.score];
+                input.value = value;
+
+                document.querySelector(
+                    '[data_slider="' + input.dataset.score + '"]'
+                ).value = value;
+            });
+
+            update_total();
+            document.getElementById("refinement_message").textContent = "";
+        });
+
+        document.getElementById("refinement_save").addEventListener("click", function() {
+            const scores = {};
+
+            score_inputs.forEach(function(input) {
+                scores[input.dataset.score] = clamp_score(input.value);
+            });
+
+            const refinement = {
+                scores: scores,
+                notes: document.getElementById("refinement_notes").value,
+                decision: document.querySelector('input[name="review_decision"]:checked').value
+            };
+
+            localStorage.setItem("assessment_refinement", JSON.stringify(refinement));
+
+            document.getElementById("refinement_message").textContent =
+                "Refinement saved in this browser for demonstration purposes.";
+        });
+
+        update_total();
+    </script>
+
+</body>
+</html>
