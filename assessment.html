@@ -1,230 +1,216 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assessment Results</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Team Assessment Review</title>
+    <link rel="stylesheet" href="assessment_page.css">
+    <style>
+        .review_member_tabs .review_tab {
+            cursor: pointer;
+            pointer-events: auto;
+            position: relative;
+            z-index: 1;
+        }
+        .review_member_tabs .review_tab.active {
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
-
-    <header class="top_header">
-        <div class="ilovepotatoes">
-            <a href="home.html" class="back_arrow">‹</a>
-            <a href="home.html" class="back_link">Assessments</a>
-            <span class="slash">/</span>
-            <strong>Assessment results</strong>
+    <header class="review_header">
+        <div class="review_breadcrumb">
+            <a href="home.html">‹ &nbsp; Assessments</a>
+            <span class="review_slash">/</span>
+            <strong>Team 04 — Sprint 3</strong>
+            <span class="review_status">NEEDS REVIEW</span>
         </div>
-
-        <a href="configuration.html" class="profile configuration_profile_link">
-            ⚙ &nbsp; Weighting - COS40005 profile
-        </a>
+        <div class="review_header_actions">
+            <a class="review_button" href="refinement.html">✎ &nbsp; Refine</a>
+            <button class="review_button" id="export_button">Export</button>
+            <button class="review_button review_button_primary" id="confirm_all">Confirm all</button>
+        </div>
     </header>
 
-    <main class="assessment_main">
-
-        <div class="assessment_heading">
-            <div>
-                <p class="assessment_eyebrow">COS40005 / Team 04 / Sprint 3</p>
-                <h1>Assessment results</h1>
-                <p class="assessment_description">
-                    Review the generated assessment, contribution evidence and supporting findings.
-                </p>
+    <main class="review_main">
+        <section class="review_panel review_distribution">
+            <div class="review_section_heading">
+                <div>
+                    <h2>Team distribution</h2>
+                    <p>Relative contribution across the team. Members more than one standard deviation from the team mean are flagged for review.</p>
+                </div>
+                <span>6 members · 312 commits · 94 claims</span>
             </div>
+            <div class="review_distribution_rows" id="distribution_rows"></div>
+        </section>
 
-            <span class="assessment_complete_badge">Completed</span>
-        </div>
-
-        <div class="assessment_toolbar">
-            <a href="home.html" class="assessment_secondary_button">Back to assessments</a>
-            <a href="refinement.html" class="assessment_primary_button">Refine assessment →</a>
-        </div>
-
-        <section class="assessment_summary">
-            <div class="assessment_metric">
-                <span>Overall score</span>
-                <strong>82<span class="assessment_metric_suffix">/100</span></strong>
-                <p>Illustrative result</p>
-            </div>
-
-            <div class="assessment_metric">
-                <span>Repository contributors</span>
-                <strong>6</strong>
-                <p>Matched identities</p>
-            </div>
-
-            <div class="assessment_metric">
-                <span>Evidence items</span>
-                <strong>24</strong>
-                <p>Illustrative result</p>
-            </div>
-
-            <div class="assessment_metric">
-                <span>Review status</span>
-                <strong class="assessment_review_value">Pending</strong>
-                <p>Instructor review required</p>
+        <section class="review_legend">
+            <h3>How evidence is classified</h3>
+            <div class="review_legend_grid">
+                <div><span class="review_tag verified">✓ VERIFIED</span><p>Claimed in a report and supported by repository evidence.</p></div>
+                <div><span class="review_tag unverified">? UNVERIFIED</span><p>Claimed, no supporting evidence found. Routed to review, never auto-penalised.</p></div>
+                <div><span class="review_tag unclaimed">+ UNCLAIMED</span><p>Evidence exists but the member never reported it. Credit may be owed.</p></div>
+                <div><span class="review_tag peer">○ PEER-NOTED</span><p>Peers credited work that leaves no repository trace.</p></div>
             </div>
         </section>
 
-        <div class="assessment_columns">
+        <nav class="review_member_tabs" id="member_tabs" aria-label="Choose a team member">
+            <button type="button" class="review_tab" data-member="0">Member 1</button>
+            <button type="button" class="review_tab" data-member="1">Member 2</button>
+            <button type="button" class="review_tab active" data-member="2">Member 3</button>
+            <button type="button" class="review_tab" data-member="3">Member 4</button>
+            <button type="button" class="review_tab" data-member="4">Member 5</button>
+            <button type="button" class="review_tab" data-member="5">Member 6</button>
+        </nav>
 
-            <section class="assessment_panel">
-                <div class="assessment_panel_heading">
-                    <h2>Assessment breakdown</h2>
-                    <span>Weighted criteria</span>
+        <section class="review_member_panel">
+            <div class="review_member_header">
+                <div class="review_member_identity">
+                    <div class="review_avatar" id="member_avatar"></div>
+                    <div><h2 id="member_title">Member 3</h2><p id="member_metadata">@member-03 · 18 commits · 9 claims</p></div>
                 </div>
-
-                <div class="assessment_criteria">
-                    <div class="assessment_criteria_heading">
-                        <strong>Code contribution</strong>
-                        <span>85 / 100</span>
-                    </div>
-                    <div class="assessment_bar">
-                        <div class="assessment_bar_fill" style="width: 85%;"></div>
-                    </div>
-                    <p>Commit activity, implementation changes and code ownership.</p>
+                <div class="review_member_actions">
+                    <button class="review_button" id="rerun_button">Re-run member</button>
+                    <a href="refinement.html" class="review_button">Edit decision</a>
                 </div>
-
-                <div class="assessment_criteria">
-                    <div class="assessment_criteria_heading">
-                        <strong>Collaboration</strong>
-                        <span>78 / 100</span>
-                    </div>
-                    <div class="assessment_bar">
-                        <div class="assessment_bar_fill" style="width: 78%;"></div>
-                    </div>
-                    <p>Pull requests, reviews and shared development activity.</p>
-                </div>
-
-                <div class="assessment_criteria">
-                    <div class="assessment_criteria_heading">
-                        <strong>Documentation</strong>
-                        <span>88 / 100</span>
-                    </div>
-                    <div class="assessment_bar">
-                        <div class="assessment_bar_fill" style="width: 88%;"></div>
-                    </div>
-                    <p>Sprint reports, contribution summaries and reflection evidence.</p>
-                </div>
-
-                <div class="assessment_criteria">
-                    <div class="assessment_criteria_heading">
-                        <strong>Consistency of evidence</strong>
-                        <span>76 / 100</span>
-                    </div>
-                    <div class="assessment_bar">
-                        <div class="assessment_bar_fill" style="width: 76%;"></div>
-                    </div>
-                    <p>Alignment between submitted claims and repository activity.</p>
-                </div>
-            </section>
-
-            <section class="assessment_panel">
-                <div class="assessment_panel_heading">
-                    <h2>Evidence overview</h2>
-                    <span>Sample findings</span>
-                </div>
-
-                <div class="assessment_evidence_item">
-                    <div class="assessment_evidence_icon">✓</div>
-                    <div>
-                        <strong>Repository activity verified</strong>
-                        <p>Contributor identities were matched to repository records.</p>
-                    </div>
-                </div>
-
-                <div class="assessment_evidence_item">
-                    <div class="assessment_evidence_icon">✓</div>
-                    <div>
-                        <strong>Documentation reviewed</strong>
-                        <p>Sprint and reflection documents were included in the assessment.</p>
-                    </div>
-                </div>
-
-                <div class="assessment_evidence_item">
-                    <div class="assessment_evidence_icon warning">!</div>
-                    <div>
-                        <strong>Contribution discrepancy</strong>
-                        <p>Some reported contributions require additional instructor review.</p>
-                    </div>
-                </div>
-
-                <div class="assessment_evidence_item">
-                    <div class="assessment_evidence_icon">✓</div>
-                    <div>
-                        <strong>Collaboration evidence collected</strong>
-                        <p>Pull request and review activity is available for inspection.</p>
-                    </div>
-                </div>
-            </section>
-
-        </div>
-
-        <section class="assessment_panel assessment_members">
-            <div class="assessment_panel_heading">
-                <h2>Team contribution overview</h2>
-                <span>Illustrative data</span>
             </div>
 
-            <div class="assessment_table_wrapper">
-                <table class="assessment_table">
-                    <thead>
-                        <tr>
-                            <th>Member</th>
-                            <th>Repository identity</th>
-                            <th>Contribution</th>
-                            <th>Evidence status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Member 01</td>
-                            <td>developer_01</td>
-                            <td>22%</td>
-                            <td><span class="assessment_table_badge">Verified</span></td>
-                        </tr>
-                        <tr>
-                            <td>Member 02</td>
-                            <td>developer_02</td>
-                            <td>19%</td>
-                            <td><span class="assessment_table_badge">Verified</span></td>
-                        </tr>
-                        <tr>
-                            <td>Member 03</td>
-                            <td>developer_03</td>
-                            <td>18%</td>
-                            <td><span class="assessment_table_badge">Verified</span></td>
-                        </tr>
-                        <tr>
-                            <td>Member 04</td>
-                            <td>developer_04</td>
-                            <td>16%</td>
-                            <td><span class="assessment_table_badge">Verified</span></td>
-                        </tr>
-                        <tr>
-                            <td>Member 05</td>
-                            <td>developer_05</td>
-                            <td>14%</td>
-                            <td><span class="assessment_table_badge">Verified</span></td>
-                        </tr>
-                        <tr>
-                            <td>Member 06</td>
-                            <td>developer_06</td>
-                            <td>11%</td>
-                            <td><span class="assessment_table_badge warning">Review</span></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="review_evidence_section">
+                <h3>Evidence by feature</h3>
+                <div id="evidence_cards"></div>
+            </div>
+
+            <div class="review_recommendation">
+                <div class="review_recommendation_heading"><h3>Recommendation</h3><span class="review_tag unverified" id="recommendation_status">AWAITING INSTRUCTOR CONFIRMATION</span></div>
+                <p id="recommendation_text"></p>
+                <div class="review_metrics">
+                    <div><span>Repository evidence</span><strong id="metric_repository">7%</strong><small>weight 40</small></div>
+                    <div><span>Claim verification</span><strong id="metric_claims">4 of 6</strong><small>weight 25</small></div>
+                    <div><span>Peer appraisal</span><strong id="metric_peer">2nd of 6</strong><small>weight 25</small></div>
+                    <div><span>Non-code artefacts</span><strong id="metric_artifacts">2 items</strong><small>weight 10</small></div>
+                </div>
+                <div class="review_recommendation_actions">
+                    <button class="review_button review_button_primary" id="confirm_member">Confirm for this member</button>
+                    <a href="refinement.html" class="review_button">Adjust recommendation</a>
+                </div>
             </div>
         </section>
-
-        <div class="assessment_footer">
-            <p>Results are preliminary until reviewed and approved by an instructor.</p>
-            <a href="refinement.html" class="assessment_primary_button">Continue to refinement →</a>
-        </div>
-
+        <p class="review_feedback" id="review_feedback" role="status"></p>
     </main>
 
+    <script>
+        const members = [
+            { name: "Member 1", percent: 24, range: "WITHIN RANGE", commits: 75, claims: 17, verified: 14, checked: 17, peer: "3rd of 6", artifacts: 3, recommendation: "Repository history supports consistent implementation of the dashboard and review endpoints. Documentation and peer feedback broadly agree with the recorded work. One deployment claim needs clarification before final confirmation.", evidence: [
+                { type: "verified", title: "Assessment dashboard", source: "SPRINT REPORT p.3", claim: "Implemented the educator assessment dashboard and filtering controls.", evidence: "18 commits to dashboard views, filter logic and associated tests; pull request #42 reviewed and merged.", note: "The implementation and review history support the reported ownership." },
+                { type: "verified", title: "Assessment API integration", source: "SPRINT REPORT p.5", claim: "Connected the dashboard to the assessment API.", evidence: "11 commits updating API requests, error handling and response mapping; integration tests added.", note: "Changes were authored under the matched repository identity." },
+                { type: "unverified", title: "Production deployment", source: "REFLECTION REPORT p.2", claim: "Led the final deployment of the application.", evidence: "Deployment configuration changes appear under a shared automation account; individual authorship cannot be established.", note: "Check deployment logs or instructor notes before attributing this work." },
+                { type: "unclaimed", title: "Accessibility improvements", source: "REPOSITORY ONLY", claim: "Not mentioned in the submitted reflection.", evidence: "7 commits improving keyboard focus, input labels and table navigation.", note: "Additional substantive work may deserve recognition." }
+            ] },
+            { name: "Member 2", percent: 19, range: "WITHIN RANGE", commits: 59, claims: 15, verified: 12, checked: 15, peer: "4th of 6", artifacts: 2, recommendation: "This member shows a balanced contribution to repository integration and issue resolution. Most claims are supported, while one architecture-related claim should be checked against team meeting records. No major contribution imbalance is indicated.", evidence: [
+                { type: "verified", title: "Repository activity collector", source: "SPRINT REPORT p.4", claim: "Built the service that retrieves commits and pull request metadata.", evidence: "16 commits to the repository client and pagination tests; pull request #37 merged.", note: "Repository records support the claimed feature work." },
+                { type: "verified", title: "Issue tracking integration", source: "REFLECTION REPORT p.3", claim: "Added issue activity to the evidence pipeline.", evidence: "9 commits adding issue retrieval, caching and API error handling.", note: "Claim and implementation align." },
+                { type: "unverified", title: "Architecture ownership", source: "SPRINT REPORT p.6", claim: "Designed the complete data collection architecture.", evidence: "Design document lists several collaborators; repository history alone does not identify a sole owner.", note: "Review the design document revision history and team discussion." },
+                { type: "peer", title: "Resolving integration blockers", source: "3 OF 5 PEER RESPONSES", claim: "Not explicitly included in the member's report.", evidence: "Peers describe support during API integration and debugging sessions.", note: "Useful collaborative work, but not independently evidenced by commits." }
+            ] },
+            { name: "Member 3", percent: 7, range: "BELOW RANGE", commits: 18, claims: 9, verified: 4, checked: 6, peer: "2nd of 6", artifacts: 2, recommendation: "Contribution is below the team mean on repository evidence, but three peer responses credit this member with design direction and unblocking others — work that leaves no commit trace. The gap between streams is the finding here, not the commit count on its own. Recommend reviewing alongside the sprint retrospective before adjusting any mark.", evidence: [
+                { type: "verified", title: "Password reset flow", source: "SPRINT REPORT p.4", claim: "Built the password recovery screens and the email token handler.", evidence: "6 commits across rec_password.py, pages/rec_password.py and the mail service. Authored 184 of 211 lines.", note: "Claim language and authored code describe the same feature. No conflicting authorship." },
+                { type: "unverified", title: "Database schema design", source: "REFLECTION REPORT p.2", claim: "Led the schema design and decided the collection structure.", evidence: "No commits to migration or schema files under this identity. Schema committed by another member.", note: "Design work may have happened before any commit. Requires instructor judgement rather than an automatic penalty." },
+                { type: "unclaimed", title: "Test suite for the auth module", source: "REPOSITORY ONLY", claim: "Not mentioned in any submitted document.", evidence: "9 commits adding 14 test cases covering token expiry and invalid input. Sustained across three days.", note: "Substantive work the member did not report. Under-reporting is as much a fairness problem as over-claiming." },
+                { type: "peer", title: "Unblocking the team on API integration", source: "3 OF 5 PEER RESPONSES", claim: "Not claimed by this member.", evidence: "No repository artefact. Peers ranked this member highly on knowledge sharing and team support.", note: "Peers consistently value contributions that version control cannot record. Counted, but marked as unverifiable by repository evidence." }
+            ] },
+            { name: "Member 4", percent: 18, range: "WITHIN RANGE", commits: 56, claims: 16, verified: 13, checked: 16, peer: "5th of 6", artifacts: 3, recommendation: "Repository records support sustained work on the document ingestion and claim extraction pipeline. The member also contributed technical documentation. A reported performance improvement needs a reproducible benchmark before it can be treated as verified.", evidence: [
+                { type: "verified", title: "Document text extraction", source: "SPRINT REPORT p.3", claim: "Implemented PDF and DOCX ingestion for assessment submissions.", evidence: "15 commits to parsing modules and malformed-file tests; pull request #51 merged.", note: "Implementation is attributable to this member." },
+                { type: "verified", title: "Claim extraction preprocessing", source: "SPRINT REPORT p.5", claim: "Built the text cleanup and section splitting pipeline.", evidence: "12 commits to segmentation, text normalization and unit tests.", note: "The claimed contribution matches the code changes." },
+                { type: "unverified", title: "Processing speed improvement", source: "REFLECTION REPORT p.3", claim: "Reduced document processing time by 40%.", evidence: "Optimization changes exist, but no before-and-after benchmark is included in the repository.", note: "Request benchmark logs or avoid assigning credit for the numerical claim." },
+                { type: "unclaimed", title: "Parser troubleshooting guide", source: "REPOSITORY ONLY", claim: "Not described in the reflection report.", evidence: "Authored a troubleshooting guide with sample failure cases and recovery steps.", note: "Non-code documentation can be counted separately from commit volume." }
+            ] },
+            { name: "Member 5", percent: 25, range: "ABOVE RANGE", commits: 78, claims: 21, verified: 18, checked: 21, peer: "1st of 6", artifacts: 4, recommendation: "This member has the largest estimated repository share and strong support for backend implementation and schema maintenance. Peer feedback also reports significant coordination work. Above-range contribution is a review flag, not evidence of misconduct or a reason to reduce credit.", evidence: [
+                { type: "verified", title: "Database schema and migrations", source: "SPRINT REPORT p.4", claim: "Implemented database tables and migration scripts.", evidence: "21 commits across migration files, schema definitions and rollback tests; pull request #33 merged.", note: "Authorship is supported. This does not independently establish who originated the schema design." },
+                { type: "verified", title: "Assessment scoring service", source: "SPRINT REPORT p.6", claim: "Implemented weighted scoring and threshold evaluation.", evidence: "17 commits covering score aggregation, configuration loading and boundary tests.", note: "Tests and code changes align with the reported implementation." },
+                { type: "unclaimed", title: "Deployment recovery scripts", source: "REPOSITORY ONLY", claim: "Not listed in submitted contribution summaries.", evidence: "6 commits adding rollback scripts and a recovery checklist.", note: "Additional operational work should be considered during review." },
+                { type: "peer", title: "Sprint coordination", source: "4 OF 5 PEER RESPONSES", claim: "Reported as informal support rather than a feature deliverable.", evidence: "Peers consistently mention organising integration meetings and reviewing blocked pull requests.", note: "Peer observations support the contribution, though no single code artefact captures it." }
+            ] },
+            { name: "Member 6", percent: 7, range: "BELOW RANGE", commits: 26, claims: 16, verified: 8, checked: 12, peer: "6th of 6", artifacts: 1, recommendation: "The estimated repository share is low and several reported features cannot yet be matched to this identity. There is verified work on interface testing and defect fixes, so the result should not be interpreted as no contribution. Review pair-programming records and unverified claims before confirming.", evidence: [
+                { type: "verified", title: "Interface regression testing", source: "SPRINT REPORT p.5", claim: "Tested the educator workflow and fixed interface regressions.", evidence: "10 commits to browser tests, form validation and bug fixes; issues #68 and #72 closed.", note: "The work is directly traceable to this member." },
+                { type: "unverified", title: "Recommendation generation", source: "REFLECTION REPORT p.2", claim: "Implemented the recommendation generation algorithm.", evidence: "Main implementation files were authored by Member 5. No matching code changes appear under this identity.", note: "Ask whether the contribution involved design, pairing or testing rather than direct implementation." },
+                { type: "unverified", title: "Repository authentication", source: "SPRINT REPORT p.6", claim: "Built the repository authentication module.", evidence: "Related pull request names this member as a reviewer, not an author.", note: "Review work should be credited appropriately, but is distinct from writing the module." },
+                { type: "unclaimed", title: "Error-message accessibility fixes", source: "REPOSITORY ONLY", claim: "Not included in the member's written summary.", evidence: "5 commits improving error messages and keyboard focus behaviour.", note: "Verified fixes should not be overlooked when evaluating a lower contribution share." }
+            ] }
+        ];
+
+        const labels = { verified: "✓ VERIFIED", unverified: "? UNVERIFIED", unclaimed: "+ UNCLAIMED", peer: "○ PEER-NOTED" };
+        let selected_member = 2;
+        const confirmed_members = new Set();
+        const distribution_rows = document.getElementById("distribution_rows");
+        const member_tabs = document.getElementById("member_tabs");
+        const evidence_cards = document.getElementById("evidence_cards");
+
+        function show_feedback(message) {
+            document.getElementById("review_feedback").textContent = message;
+        }
+
+        function render_distribution() {
+            distribution_rows.innerHTML = members.map((member, index) => `
+                <div class="review_distribution_row">
+                    <strong>${member.name}</strong>
+                    <div class="review_bar_track"><div class="review_bar_fill ${member.range === "WITHIN RANGE" ? "normal" : "flagged"}" style="width:${member.percent * 4}%"></div></div>
+                    <span class="review_percent">${member.percent}%</span>
+                    <span class="review_range ${member.range === "WITHIN RANGE" ? "normal" : "flagged"}">${member.range}</span>
+                </div>
+            `).join("");
+        }
+
+        function render_tabs() {
+            member_tabs.querySelectorAll("button[data-member]").forEach(function(button) {
+                const active = Number(button.dataset.member) === selected_member;
+                button.classList.toggle("active", active);
+                button.setAttribute("aria-pressed", String(active));
+            });
+        }
+
+        member_tabs.querySelectorAll("button[data-member]").forEach(function(button) {
+            button.addEventListener("click", function() {
+                selected_member = Number(button.dataset.member);
+                render_member();
+                show_feedback("");
+            });
+        });
+
+        function render_member() {
+            const member = members[selected_member];
+            document.getElementById("member_title").textContent = member.name;
+            document.getElementById("member_metadata").textContent = `@member-${String(selected_member + 1).padStart(2, "0")} · ${member.commits} commits · ${member.claims} claims`;
+            document.getElementById("metric_repository").textContent = `${member.percent}%`;
+            document.getElementById("metric_claims").textContent = `${member.verified} of ${member.checked}`;
+            document.getElementById("metric_peer").textContent = member.peer;
+            document.getElementById("metric_artifacts").textContent = `${member.artifacts} ${member.artifacts === 1 ? "item" : "items"}`;
+            document.getElementById("recommendation_status").textContent = confirmed_members.has(selected_member) ? "INSTRUCTOR CONFIRMED" : "AWAITING INSTRUCTOR CONFIRMATION";
+            document.getElementById("recommendation_text").textContent = member.recommendation;
+            const evidence = member.evidence;
+            evidence_cards.innerHTML = evidence.map((item, index) => `
+                <article class="review_evidence_card">
+                    <div class="review_evidence_title"><div><span class="review_tag ${item.type}">${labels[item.type]}</span><strong>${item.title}</strong></div><small>${item.source}</small></div>
+                    <div class="review_evidence_details"><div><span>CLAIMED</span><p>${item.claim}</p></div><div><span>EVIDENCE</span><p>${item.evidence}</p></div></div>
+                    <div class="review_evidence_note"><p>${item.note}</p><a href="refinement.html" class="review_button review_button_small">Override</a></div>
+                </article>
+            `).join("");
+            render_tabs();
+        }
+
+        document.getElementById("confirm_member").addEventListener("click", () => {
+            confirmed_members.add(selected_member);
+            render_member();
+            show_feedback(`${members[selected_member].name} marked as confirmed in this prototype.`);
+        });
+        document.getElementById("confirm_all").addEventListener("click", () => {
+            members.forEach((_, index) => confirmed_members.add(index));
+            render_member();
+            show_feedback("All members marked as confirmed in this prototype.");
+        });
+        document.getElementById("rerun_button").addEventListener("click", () => show_feedback("Re-running requires backend integration; no assessment was started."));
+        document.getElementById("export_button").addEventListener("click", () => window.print());
+        render_distribution();
+        render_member();
+    </script>
 </body>
 </html>
