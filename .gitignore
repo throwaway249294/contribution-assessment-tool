@@ -1,0 +1,4 @@
+extractor/*.json
+extractor/repos/
+venv/
+__pycache__/
