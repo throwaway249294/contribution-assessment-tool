@@ -1,0 +1,20 @@
+export const default_metrics = [
+  {id:'repo',name:'Repository evidence',weight:40,description:'Commits, code changes, reviews and issue activity'},
+  {id:'claims',name:'Claim verification',weight:25,description:'Reported contributions supported by evidence'},
+  {id:'peer',name:'Peer appraisal',weight:25,description:'Feedback provided by other team members'},
+  {id:'artefacts',name:'Non-code documents',weight:10,description:'Designs, reports and written deliverables'}
+];
+const examples = [
+  {name:'Member 1',commits:75,share:24,flag:null,verified:['Implemented the assessment dashboard and team navigation','Integrated contribution charts with mock API responses'],unverified:['Designed the original team scoring formula'],wrongly:['Claimed sole ownership of the shared sidebar component'],peer:['Peers credit this member with frontend coordination and code reviews'],recommendation:'Strong visible frontend contribution. Confirm the scoring-design claim against design notes before assigning individual credit.'},
+  {name:'Member 2',commits:59,share:19,flag:null,verified:['Built repository activity collection endpoints','Added issue and pull-request pagination'],unverified:['Led deployment configuration'],wrongly:['Attributed a shared integration fix to one author'],peer:['Peers report reliable troubleshooting and integration support'],recommendation:'Consistent repository and integration work. Deployment leadership is not yet supported by available records.'},
+  {name:'Member 3',commits:18,share:7,flag:'Below range',verified:['Built password recovery screens and email token handler'],unverified:['Led database schema design'],wrongly:['Test suite for the authentication module was not mentioned in submitted documents'],peer:['Three peers credit this member with API design discussions and unblocking other members'],recommendation:'Repository contribution is below the team average, but peer feedback suggests valuable design and support work that is not visible in commit counts. Instructor review is recommended.'},
+  {name:'Member 4',commits:56,share:18,flag:null,verified:['Implemented PDF and DOCX text extraction','Added document upload validation'],unverified:['Designed the entire document processing architecture'],wrongly:['Shared file validation helper was also developed by Member 1'],peer:['Peers highlight thorough testing of document formats'],recommendation:'Consistent contribution to document processing. Clarify architecture ownership before finalising the recommendation.'},
+  {name:'Member 5',commits:82,share:25,flag:'Above range',verified:['Created database migrations and schema','Implemented evidence matching service'],unverified:['Completed all end-to-end testing'],wrongly:['Claimed a reporting view later completed jointly with Member 6'],peer:['Peers recognise significant backend leadership'],recommendation:'High repository contribution and strong backend evidence. Verify the end-to-end testing claim and shared reporting work.'},
+  {name:'Member 6',commits:22,share:7,flag:'Below range',verified:['Added interface regression tests','Improved keyboard navigation and accessibility labels'],unverified:['Owned the complete QA strategy'],wrongly:['Reported sole authorship of the shared reporting view'],peer:['Peers credit accessibility testing and detailed feedback'],recommendation:'Lower commit share, with identifiable quality and accessibility work. Consider peer feedback and non-code evidence before deciding.'}
+];
+export const initial_assessments=[
+  {id:'team04s3',title:'Team 04 — Sprint 3',unit:'COS40005',team:'Team 04',sprint:'Sprint 3',date:'2 Oct',status:'Needs review',members:examples},
+  {id:'team11s3',title:'Team 11 — Sprint 3',unit:'COS40005',team:'Team 11',sprint:'Sprint 3',date:'2 Oct',status:'Confirmed',members:examples.map((m,i)=>({...m,name:`Member ${i+1}`}))},
+  {id:'team07s3',title:'Team 07 — Sprint 3',unit:'COS40005',team:'Team 07',sprint:'Sprint 3',date:'1 Oct',status:'Needs review',members:examples},
+  {id:'team04s2',title:'Team 04 — Sprint 2',unit:'COS40005',team:'Team 04',sprint:'Sprint 2',date:'12 Sep',status:'Confirmed',members:examples}
+];
