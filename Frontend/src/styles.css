@@ -518,3 +518,7 @@ small{
         padding: 12px;
     }
 }
+
+.profile_controls { display: flex; flex-direction: column; gap: 10px; margin: 18px 0; }
+.profile_controls label { display: flex; flex-direction: column; gap: 5px; }
+.profile_controls select, .profile_controls input { width: 100%; min-width: 0; padding: 9px; }
