@@ -1,247 +1,935 @@
-import React,{useState,useEffect} from 'react';
-import {initial_assessments} from './data';
-import {loadAssessments,saveEvaluationDecision,loadAuditLogs,saveAssessmentWeights,loadTeams,createAssessment,setEvaluationReviewed,confirmAssessment,createManualEvaluation,loadWeightProfiles,createWeightProfile,loadTeachers} from './api';
-import './styles.css';
-const metricNames=['Repository evidence','Claim verification','Peer appraisal','Non-code documents'];
-const initialWeights=[40,25,25,10];
-const labelForMetric=(key)=>key.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/_/g,' ').replace(/^./,c=>c.toUpperCase());
-const stages=['Checking contributions','Verifying claims','Reading documents','Matching claims to evidence','Detecting unevidenced work','Flagging outliers'];
-function App(){
- const [page,setPage]=useState('home');
- const [assessments,setAssessments]=useState([]);
- const [loadingAssessments,setLoadingAssessments]=useState(true);
- const [loadError,setLoadError]=useState('');
- const [assessmentId,setAssessmentId]=useState(null);
- const [teachers,setTeachers]=useState([]);const [teacherError,setTeacherError]=useState('');
- const [teams,setTeams]=useState([]);const [selectedTeamId,setSelectedTeamId]=useState('');const [sprint,setSprint]=useState('2');const [createError,setCreateError]=useState('');const [creating,setCreating]=useState(false);
- const [memberIndex,setMemberIndex]=useState(0);
- const [manualRecommendation,setManualRecommendation]=useState('');const [evidenceNotes,setEvidenceNotes]=useState('');const [manualError,setManualError]=useState('');const [manualBusy,setManualBusy]=useState(false);
- const [reviewBusy,setReviewBusy]=useState(false);const [reviewError,setReviewError]=useState('');const [confirmBusy,setConfirmBusy]=useState(false);const [confirmError,setConfirmError]=useState('');
- const [search,setSearch]=useState('');
- const [unit,setUnit]=useState('COS40005');const [team,setTeam]=useState('Team 04');const [repo,setRepo]=useState('cos40005-2026/team-04');const [docs,setDocs]=useState([]);
- const [stage,setStage]=useState(0);const [seconds,setSeconds]=useState(0);
- const [profiles,setProfiles]=useState([]);const [profileId,setProfileId]=useState('');const [profileName,setProfileName]=useState('');const [profileBusy,setProfileBusy]=useState(false);
- const [settingsOpen,setSettingsOpen]=useState(false);const [weights,setWeights]=useState(initialWeights);const [history,setHistory]=useState([]);
- const [draftWeights,setDraftWeights]=useState(initialWeights);const [weightKeys,setWeightKeys]=useState([]);const [weightError,setWeightError]=useState('');const [savingWeights,setSavingWeights]=useState(false);const [editing,setEditing]=useState(false);
- const [edits,setEdits]=useState({});const [draft,setDraft]=useState('');const [expanded,setExpanded]=useState(-1);
- const [audit,setAudit]=useState({});const [saving,setSaving]=useState(false);const [saveError,setSaveError]=useState('');const [auditError,setAuditError]=useState('');const [customMetric,setCustomMetric]=useState([]);const [newMetricName,setNewMetricName]=useState('');const [addingMetric,setAddingMetric]=useState(false);
- const assessment=assessments.find(a=>a.id===assessmentId)||assessments[0]||{id:'',title:'',members:[]};
- const activeTeam=teams.find(t=>String(t.teamName)===String(assessment.team));
- const associatedTeacher=teachers.find(t=>String(t._id)===String(activeTeam?.teacherId));
- const teacherLabel=associatedTeacher?.name||'Teacher unavailable';
- const member=assessment.members[memberIndex]||assessment.members[0]||{name:'No member selected',verified:[],unverified:[],wrongly:[],peer:[],recommendation:'No evaluation available.'};
- const key=assessment.id+'_'+memberIndex;
- const currentEdit=edits[key]||{};
- const memberAudit=audit[String(member.evaluationId)]||[];
- useEffect(()=>{
-  let active=true;
-  loadTeachers().then(records=>{if(active)setTeachers(records)}).catch(error=>{if(active)setTeacherError(error.message)});
-  loadTeams().then(records=>{if(active){setTeams(records);setSelectedTeamId(records[0]?._id||'')}}).catch(error=>{if(active)setCreateError(error.message)});
-  loadAssessments()
-   .then(records=>{
-    if(!active)return;
-    setAssessments(records);
-    setAssessmentId(records[0]?.id||null);
-    setLoadError('');
-   })
-   .catch(error=>{
-    if(active)setLoadError(error.message);
-   })
-   .finally(()=>{
-    if(active)setLoadingAssessments(false);
-   });
-  return()=>{active=false};
- },[]);
- useEffect(()=>{if(page!=='processing')return;const timer=setInterval(()=>{setSeconds(s=>s+1);setStage(s=>Math.min(6,s+1))},2500);return()=>clearInterval(timer)},[page]);
- const navigate=(p)=>{setPage(p);window.scrollTo(0,0)};
- const openAssessment=(a)=>{setAssessmentId(a.id);setMemberIndex(0);navigate('assessment')};
- const startRun=async()=>{
-  if(creating)return;
-  setCreateError('');
-  const selected=teams.find(t=>String(t._id)===String(selectedTeamId));
-  if(!selected){setCreateError('Select an existing MongoDB team.');return}
-  const number=Number(sprint);
-  if(!Number.isInteger(number)||number<1||number>999){setCreateError('Enter a valid sprint number from 1 to 999.');return}
-  setCreating(true);
-  try{
-   const created=await createAssessment({teamId:String(selected._id),sprint:number});
-   const records=await loadAssessments();
-   setAssessments(records);
-   setAssessmentId(String(created._id));
-   setMemberIndex(0);
-   setStage(0);setSeconds(0);
-   navigate('processing');
-  }catch(error){setCreateError(error.message)}
-  finally{setCreating(false)}
- };
- const reloadAssessments=async()=>{
-  const records=await loadAssessments();
-  setAssessments(records);
-  await refreshAudit();
- };
- const saveManualEvaluation=async()=>{
-  setManualError('');
-  if(!manualRecommendation.trim()||!evidenceNotes.trim()){
-   setManualError('Enter a recommendation and supporting evidence notes.');return;
-  }
-  setManualBusy(true);
-  try{
-   await createManualEvaluation(assessment.id,{
-    memberId:String(member.id),recommendation:manualRecommendation,evidenceNotes
-   });
-   await reloadAssessments();
-   setManualRecommendation('');
-   setEvidenceNotes('');
-  }catch(error){setManualError(error.message)}
-  finally{setManualBusy(false)}
- };
- const toggleReviewed=async()=>{
-  setReviewError('');
-  if(!member.evaluationId){setReviewError('This member has no evaluation to review.');return}
-  setReviewBusy(true);
-  try{await setEvaluationReviewed(member.evaluationId,!member.reviewed);await reloadAssessments()}
-  catch(error){setReviewError(error.message)}
-  finally{setReviewBusy(false)}
- };
- const finishAssessment=async()=>{
-  setConfirmError('');
-  if(!window.confirm('Confirm this assessment? All members must have reviewed evaluations. Confirmation locks recommendations and weights.'))return;
-  setConfirmBusy(true);
-  try{await confirmAssessment(assessment.id);await reloadAssessments()}
-  catch(error){setConfirmError(error.message)}
-  finally{setConfirmBusy(false)}
- };
- const editMember=()=>{if(assessment.teacherConfirmed)return;setDraft(currentEdit.recommendation??member.recommendation);setSaveError('');setEditing(true);navigate('refinement')};
- const refreshAudit=async()=>{
-  try{
-   const logs=await loadAuditLogs();
-   const grouped={};
-   for(const log of logs){
-    const id=String(log.evaluationId||'');
-    const entry={message:log.action||'Recommendation updated',date:log.createdAt?new Date(log.createdAt).toLocaleString():'',detail:`${log.fieldChanged||'Recommendation'}: ${String(log.previousValue??'(empty)')} → ${String(log.newValue??'(empty)')}`};
-    if(!grouped[id])grouped[id]=[];
-    grouped[id].push(entry);
-   }
-   setAudit(grouped);
-   setAuditError('');
-  }catch(error){setAuditError(error.message)}
- };
- useEffect(()=>{refreshAudit()},[]);
- const saveMember=async()=>{
-  setSaveError('');
-  if(assessment.teacherConfirmed){setSaveError('Confirmed assessments are locked.');return;}
-  if(!draft.trim()){setSaveError('Enter a recommendation before saving.');return;}
-  if(!member.evaluationId){
-   setSaveError('This member has no evaluation in MongoDB. No changes were saved.');
-   return;
-  }
-  if(saving)return;
-  setSaving(true);
-  try{
-   const saved=await saveEvaluationDecision(member.evaluationId,draft);
-   setAssessments(items=>items.map(item=>item.id!==assessment.id?item:{
-    ...item,members:item.members.map(person=>person.id!==member.id?person:{
-     ...person,recommendation:saved.recommendation
-    })
-   }));
-   setEdits(e=>({...e,[key]:{...e[key],recommendation:saved.recommendation}}));
-   await refreshAudit();
-   setEditing(false);
-   navigate('assessment');
-  }catch(error){setSaveError(error.message)}
-  finally{setSaving(false)}
- };
- const adjustWeight=(index,value)=>{
-  const target=Math.max(0,Math.min(100,Math.round(Number(value))));
-  const previous=[...draftWeights];
-  const next=[...previous];
-  const otherIndices=previous.map((_,i)=>i).filter(i=>i!==index);
-  if(!otherIndices.length){setDraftWeights([100]);return;}
-  const remaining=100-target;
-  const otherTotal=otherIndices.reduce((sum,i)=>sum+previous[i],0);
-  const allocations=otherIndices.map(i=>({
-   index:i,
-   exact:otherTotal>0?previous[i]/otherTotal*remaining:remaining/otherIndices.length
-  }));
-  allocations.forEach(item=>{next[item.index]=Math.floor(item.exact)});
-  let remainder=remaining-allocations.reduce((sum,item)=>sum+Math.floor(item.exact),0);
-  allocations.sort((a,b)=>(b.exact-Math.floor(b.exact))-(a.exact-Math.floor(a.exact))||a.index-b.index);
-  for(let i=0;i<remainder;i++)next[allocations[i].index]++;
-  next[index]=target;
-  setHistory(h=>[previous,...h]);
-  setDraftWeights(next);
- };
- const openSettings=()=>{
-  const databaseWeights=assessment.metricWeights||{};
-  const keys=Object.keys(databaseWeights);
-  setWeightKeys(keys);
-  setDraftWeights(keys.length?keys.map(k=>databaseWeights[k]):[...weights]);
-  setWeightError('');
-  setHistory([]);
-  setAddingMetric(false);
-  setNewMetricName('');
-  setProfileId('');setProfileName('');
-  loadWeightProfiles().then(setProfiles).catch(error=>setWeightError(error.message));
-  setSettingsOpen(true);
- };
- const applicableProfiles=profiles.filter(profile=>{
-  const selectedTeam=teams.find(team=>String(team.teamName)===String(assessment.team));
-  return selectedTeam && String(profile.teacherId)===String(selectedTeam.teacherId) &&
-   String(profile.unitCode)===String(assessment.unit) &&
-   weightKeys.length===Object.keys(profile.metrics||{}).length &&
-   weightKeys.every(key=>Object.hasOwn(profile.metrics||{},key));
- });
- const applyProfile=()=>{
-  const profile=applicableProfiles.find(item=>String(item._id)===profileId);
-  if(!profile){setWeightError('Select a compatible profile.');return}
-  setHistory(h=>[[...draftWeights],...h]);
-  setDraftWeights(weightKeys.map(key=>profile.metrics[key]));
-  setWeightError('');
- };
- const saveProfile=async()=>{
-  setWeightError('');
-  const selectedTeam=teams.find(team=>String(team.teamName)===String(assessment.team));
-  if(!selectedTeam){setWeightError('The assessment team could not be resolved.');return}
-  if(!profileName.trim()){setWeightError('Enter a profile name.');return}
-  setProfileBusy(true);
-  try{
-   await createWeightProfile({teamId:String(selectedTeam._id),profileName:profileName.trim(),
-    metrics:Object.fromEntries(weightKeys.map((key,index)=>[key,draftWeights[index]]))});
-   setProfiles(await loadWeightProfiles());setProfileName('');
-  }catch(error){setWeightError(error.message)}
-  finally{setProfileBusy(false)}
- };
- const saveSettings=async()=>{
-  if(savingWeights)return;
-  if(assessment.teacherConfirmed){setWeightError('Confirmed assessments are locked.');return;}
-  setWeightError('');
-  if(!assessment.isDatabaseRecord){
-   setWeights([...draftWeights]);
-   setSettingsOpen(false);
-   return;
-  }
-  const metricWeights=Object.fromEntries(weightKeys.map((key,index)=>[key,draftWeights[index]]));
-  setSavingWeights(true);
-  try{
-   const saved=await saveAssessmentWeights(assessment.id,metricWeights);
-   setAssessments(items=>items.map(item=>item.id===assessment.id?{
-    ...item,metricWeights:saved.metricWeights
-   }:item));
-   setSettingsOpen(false);
-   await refreshAudit();
-  }catch(error){setWeightError(error.message)}
-  finally{setSavingWeights(false)}
- };
- const upload=(e)=>{setDocs(old=>[...old,...Array.from(e.target.files||[]).map(f=>({name:f.name,size:f.size}))]);e.target.value=''};
- const heading=(text)=> <h2>{text}</h2>;
- return <div className="site">
- {page==='home'&&<><header className="site_header"><strong>{unit} Assessment</strong><span>{teacherLabel}</span></header><div className="home_shell"><aside className="sidebar"><button onClick={()=>navigate('home')}>Assessments +</button><button onClick={openSettings}>Config</button><button onClick={()=>navigate('audit')}>Audit Log</button></aside><main className="home_content"><h1>Assessments</h1>{teacherError&&<p role="alert">Teacher information unavailable: {teacherError}</p>}{associatedTeacher&&<section className="panel"><h2>Associated educator</h2><p><strong>{associatedTeacher.name}</strong> · {associatedTeacher.email}</p><p>Role: {associatedTeacher.role} · Unit: {activeTeam?.unitCode||assessment.unit}</p></section>}{loadingAssessments&&<p>Loading assessments...</p>}{loadError&&<p role="alert">Could not load assessments: {loadError}</p>}{!loadingAssessments&&!loadError&&assessments.length===0&&<p>No assessments found.</p>}<div className="home_toolbar"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by unit or team"/><button className="primary" onClick={()=>navigate('new')}>New assessment</button></div>{assessments.filter(a=>(a.title+' '+a.unit).toLowerCase().includes(search.toLowerCase())).map(a=><div className="assessment_row" key={a.id}><div><strong>{a.title}</strong><small>{a.members.length} members, {a.unit}</small></div><button onClick={()=>openAssessment(a)}>Open</button></div>)}</main></div></>}
- {page==='new'&&<main className="narrow"><div className="top_actions"><button onClick={()=>navigate('home')}>‹ Assessments</button></div><section className="panel"><h2>Team</h2><div className="two_inputs"><label>Team<select value={selectedTeamId} onChange={e=>setSelectedTeamId(e.target.value)}>{teams.map(item=><option key={item._id} value={item._id}>{item.teamName} ({item.unitCode})</option>)}</select></label><label>Sprint<input type="number" min="1" max="999" value={sprint} onChange={e=>setSprint(e.target.value)}/></label></div></section><section className="panel"><h2>Documents</h2><label className="upload">Drop files, or browse<input type="file" multiple onChange={upload}/><span>PDF, DOCX, MD · up to 20 files</span></label>{docs.map((d,i)=><div className="file_row" key={i}>{d.name}<button onClick={()=>setDocs(x=>x.filter((_,j)=>j!==i))}>×</button></div>)}</section><section className="panel"><h2>Repository</h2><input value={repo} onChange={e=>setRepo(e.target.value)} placeholder="GitHub repository link"/></section><section className="panel compact"><span>Weighting</span><button onClick={openSettings}>Edit</button></section><div className="footer_actions">{createError&&<p role="alert">{createError}</p>}<button className="primary" onClick={startRun} disabled={creating}>{creating?"Creating...":"Run assessment"}</button></div></main>}
- {page==='processing'&&<main className="narrow"><h1>Assessment created</h1><section className="panel"><p>Your draft assessment has been created.</p></section><div className="footer_actions"><button onClick={()=>navigate('home')}>Back to assessments</button><button className="primary" onClick={()=>navigate('assessment')}>Open draft assessment</button></div></main>}
- {page==='assessment'&&<main className="narrow"><div className="top_actions"><button onClick={()=>navigate('home')}>‹ Assessments</button><strong>{assessment.title}</strong></div><p>Educator: {teacherLabel}</p><section className="panel"><h2>Member Select</h2><div className="member_tabs">{assessment.members.map((m,i)=><button key={i} className={i===memberIndex?'selected':''} onClick={()=>setMemberIndex(i)}>{m.name}</button>)}</div></section><section className="panel"><h2>{member.name}</h2><div className="evidence_group"><strong>Verified claims</strong><ul>{member.verified.map((s,i)=><li key={i}>{s}</li>)}</ul></div><div className="evidence_group"><strong>Unverified claims</strong><ul>{member.unverified.map((s,i)=><li key={i}>{s}</li>)}</ul></div><div className="evidence_group"><strong>Evidence that was wrongly claimed</strong><ul>{member.wrongly.map((s,i)=><li key={i}>{s}</li>)}</ul></div><div className="evidence_group"><strong>Peer review</strong><ul>{member.peer.map((s,i)=><li key={i}>{s}</li>)}</ul></div><div className="recommendation"><strong>Overall recommendation</strong><p>{currentEdit.recommendation??member.recommendation}</p><button onClick={editMember} disabled={assessment.teacherConfirmed||!member.evaluationId}>Edit</button></div><div className="footer_actions"><strong>Evaluation review: {member.evaluationId?(member.reviewed?'Reviewed':'Not reviewed'):'No evaluation'}</strong><button onClick={toggleReviewed} disabled={reviewBusy||assessment.teacherConfirmed||!member.evaluationId}>{reviewBusy?'Saving...':member.reviewed?'Reopen review':'Mark reviewed'}</button></div>{reviewError&&<p role="alert">{reviewError}</p>}</section>{!member.evaluationId&&!assessment.teacherConfirmed&&<section className="panel"><h2>Create manual evaluation</h2><label className="text_label">Supporting evidence notes<textarea rows="4" value={evidenceNotes} onChange={e=>setEvidenceNotes(e.target.value)} placeholder="Describe the evidence you reviewed and its source"/></label><label className="text_label">Educator recommendation<textarea rows="5" value={manualRecommendation} onChange={e=>setManualRecommendation(e.target.value)} placeholder="Write your assessment of this student's contribution"/></label>{manualError&&<p role="alert">{manualError}</p>}<button className="primary" onClick={saveManualEvaluation} disabled={manualBusy}>{manualBusy?'Saving...':'Save manual evaluation'}</button></section>}<section className="panel"><h2>Assessment confirmation</h2><p>Status: {assessment.status}{assessment.teacherConfirmed?' (confirmed and locked)':''}</p>{confirmError&&<p role="alert">{confirmError}</p>}<button className="primary" onClick={finishAssessment} disabled={confirmBusy||assessment.teacherConfirmed}>{confirmBusy?'Confirming...':assessment.teacherConfirmed?'Confirmed':'Confirm assessment'}</button></section></main>}
- {page==='refinement'&&<main className="narrow"><div className="top_actions"><button onClick={()=>navigate('assessment')}>‹ Back to assessment</button></div><section className="panel"><h1>Editing recommendation</h1><label className="text_label">Recommendation<textarea rows="6" value={draft} onChange={e=>setDraft(e.target.value)}/></label>{saveError&&<p role="alert">{saveError}</p>}<strong>Verified claims:</strong><ul>{member.verified.map((s,i)=><li key={i}>{s}</li>)}</ul><div className="footer_actions"><button onClick={()=>navigate('assessment')}>Cancel</button><button className="primary" onClick={saveMember} disabled={saving}>{saving?"Saving...":"Save"}</button></div></section><section className="panel"><h2>Audit log</h2>{memberAudit.map((a,i)=><div className="audit_item" key={i}><button onClick={()=>setExpanded(expanded===i?-1:i)}>{a.date}: {a.message} {expanded===i?'⌃':'⌄'}</button>{expanded===i&&<p>{a.detail}</p>}</div>)}</section></main>}
- {page==='audit'&&<main className="narrow"><div className="top_actions"><button onClick={()=>navigate('home')}>‹ Assessments</button></div><section className="panel"><h1>Audit Log</h1>{auditError&&<p role="alert">{auditError}</p>}{Object.entries(audit).flatMap(([k,v])=>v.map((a,i)=><p key={k+i}>{a.date} — {a.message}: {a.detail}</p>))}</section></main>}
- {settingsOpen&&<div className="modal_backdrop"><div className="modal"><div className="modal_heading"><h2>Settings</h2><button onClick={()=>setSettingsOpen(false)}>×</button></div>{(assessment.isDatabaseRecord?weightKeys.map(labelForMetric):[...metricNames,...customMetric]).map((name,i)=><div className="weight_row" key={name}><div><strong>{name}</strong><span>{draftWeights[i]||0}</span></div><input type="range" min="0" max="100" value={draftWeights[i]||0} onChange={e=>adjustWeight(i,e.target.value)}/></div>)}{assessment.isDatabaseRecord&&<div className="profile_controls"><h3>Reusable weight profiles</h3><label>Saved profiles<select value={profileId} onChange={e=>setProfileId(e.target.value)}><option value="">Select a profile</option>{applicableProfiles.map(profile=><option key={profile._id} value={profile._id}>{profile.profileName}{profile.isDefault?' (Default)':''}</option>)}</select></label><button type="button" onClick={applyProfile} disabled={!profileId||assessment.teacherConfirmed}>Load selected profile</button><label>New profile name<input value={profileName} onChange={e=>setProfileName(e.target.value)} placeholder="Profile name" maxLength="100"/></label><button type="button" onClick={saveProfile} disabled={profileBusy||!profileName.trim()}>{profileBusy?'Saving profile...':'Save as new profile'}</button></div>}{weightError&&<p role="alert">{weightError}</p>}<div className="weight_info">Rebalanced automatically <button onClick={()=>{if(history.length){setDraftWeights(history[0]);setHistory(h=>h.slice(1))}}} disabled={!history.length}>UNDO</button></div>{addingMetric&&<div className="add_metric_row"><input value={newMetricName} onChange={e=>setNewMetricName(e.target.value)} placeholder="Metric name" aria-label="Metric name"/><button onClick={()=>{if(newMetricName.trim()){setCustomMetric(x=>[...x,newMetricName.trim()]);setDraftWeights(x=>[...x,0]);setNewMetricName('');setAddingMetric(false)}}}>Add</button><button onClick={()=>setAddingMetric(false)}>Cancel</button></div>}<div className="footer_actions"><button onClick={()=>setSettingsOpen(false)}>Cancel</button><button onClick={saveSettings} disabled={savingWeights||assessment.teacherConfirmed} className="primary">{savingWeights?"Saving...":"Save"}</button>{!assessment.isDatabaseRecord&&<button onClick={()=>setAddingMetric(true)}>+ Add new metric</button>}</div></div></div>}
- </div>
+import React, { useState, useEffect, useRef } from "react";
+import {
+    loadAssessments,
+    saveEvaluationDecision,
+    loadAuditLogs,
+    saveAssessmentWeights,
+    loadTeams,
+    createAssessment,
+    setEvaluationReviewed,
+    confirmAssessment,
+    createManualEvaluation,
+    loadWeightProfiles,
+    createWeightProfile,
+    loadTeachers,
+} from "./api";
+import "./styles.css";
+import { rebalanceWeights } from "./weights";
+const DEFAULT_WEIGHTS = { taskCompletion: 25, collaboration: 25, contributionQuality: 25, evidenceTraceability: 25 };
+const DEFAULT_KEYS = Object.keys(DEFAULT_WEIGHTS);
+const labelForMetric = (key) =>
+    key
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/_/g, " ")
+        .replace(/^./, (c) => c.toUpperCase());
+const stages = [
+    "Checking contributions",
+    "Verifying claims",
+    "Reading documents",
+    "Matching claims to evidence",
+    "Detecting unevidenced work",
+    "Flagging outliers",
+];
+function App() {
+    const [page, setPage] = useState("home");
+    const [assessments, setAssessments] = useState([]);
+    const [loadingAssessments, setLoadingAssessments] = useState(true);
+    const [loadError, setLoadError] = useState("");
+    const [assessmentId, setAssessmentId] = useState(null);
+    const [teachers, setTeachers] = useState([]);
+    const [teacherError, setTeacherError] = useState("");
+    const [teams, setTeams] = useState([]);
+    const [selectedTeamId, setSelectedTeamId] = useState("");
+    const [sprint, setSprint] = useState("2");
+    const [createError, setCreateError] = useState("");
+    const [creating, setCreating] = useState(false);
+    const [memberIndex, setMemberIndex] = useState(0);
+    const [manualRecommendation, setManualRecommendation] = useState("");
+    const [evidenceNotes, setEvidenceNotes] = useState("");
+    const [manualError, setManualError] = useState("");
+    const [manualBusy, setManualBusy] = useState(false);
+    const [reviewBusy, setReviewBusy] = useState(false);
+    const [reviewError, setReviewError] = useState("");
+    const [confirmBusy, setConfirmBusy] = useState(false);
+    const [confirmError, setConfirmError] = useState("");
+    const [search, setSearch] = useState("");
+    const [unit, setUnit] = useState("COS40005");
+    const [team, setTeam] = useState("Team 04");
+    const [repo, setRepo] = useState("cos40005-2026/team-04");
+    const [docs, setDocs] = useState([]);
+    const [stage, setStage] = useState(0);
+    const [seconds, setSeconds] = useState(0);
+    const [profiles, setProfiles] = useState([]);
+    const [profileId, setProfileId] = useState("");
+    const [profileName, setProfileName] = useState("");
+    const [profileBusy, setProfileBusy] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [history, setHistory] = useState([]);
+    const [draftWeights, setDraftWeights] = useState(DEFAULT_KEYS.map((k) => DEFAULT_WEIGHTS[k]));
+    const [openedWeights, setOpenedWeights] = useState(DEFAULT_KEYS.map((k) => DEFAULT_WEIGHTS[k]));
+    const [lastAuto, setLastAuto] = useState([]);
+    const [weightNote, setWeightNote] = useState("");
+    const lastAdjustAt = useRef(0);
+    const gestureStart = useRef(null);    const [weightKeys, setWeightKeys] = useState(DEFAULT_KEYS);
+    const [weightError, setWeightError] = useState("");
+    const [savingWeights, setSavingWeights] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [edits, setEdits] = useState({});
+    const [draft, setDraft] = useState("");
+    const [expanded, setExpanded] = useState(-1);
+    const [audit, setAudit] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState("");
+    const [auditError, setAuditError] = useState("");
+    const assessment = assessments.find((a) => a.id === assessmentId) ||
+        assessments[0] || { id: "", title: "", members: [] };
+    const activeTeam = teams.find((t) => String(t.teamName) === String(assessment.team));
+    const associatedTeacher = teachers.find((t) => String(t._id) === String(activeTeam?.teacherId));
+    const teacherLabel = associatedTeacher?.name || "Teacher unavailable";
+    const member = assessment.members[memberIndex] ||
+        assessment.members[0] || {
+            name: "No member selected",
+            verified: [],
+            unverified: [],
+            unclaimed: [],
+            peer: [],
+            recommendation: "No evaluation available.",
+        };
+    const key = assessment.id + "_" + memberIndex;
+    const currentEdit = edits[key] || {};
+    const memberAudit = audit[String(member.evaluationId)] || [];
+    const weightsLocked = assessment.teacherConfirmed;
+    const weightsChanged = draftWeights.some((v, i) => v !== openedWeights[i]);
+    useEffect(() => {
+        let active = true;
+        loadTeachers()
+            .then((records) => {
+                if (active) setTeachers(records);
+            })
+            .catch((error) => {
+                if (active) setTeacherError(error.message);
+            });
+        loadTeams()
+            .then((records) => {
+                if (active) {
+                    setTeams(records);
+                    setSelectedTeamId(records[0]?._id || "");
+                }
+            })
+            .catch((error) => {
+                if (active) setCreateError(error.message);
+            });
+        loadAssessments()
+            .then((records) => {
+                if (!active) return;
+                setAssessments(records);
+                setAssessmentId(records[0]?.id || null);
+                setLoadError("");
+            })
+            .catch((error) => {
+                if (active) setLoadError(error.message);
+            })
+            .finally(() => {
+                if (active) setLoadingAssessments(false);
+            });
+        return () => {
+            active = false;
+        };
+    }, []);
+    useEffect(() => {
+    	if (!settingsOpen) return;
+    	const onKey = (e) => {
+        	if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
+            	const tag = e.target?.tagName;
+            	if (tag === "TEXTAREA" || (tag === "INPUT" && e.target.type !== "range")) return;
+            	e.preventDefault();
+            	undoWeights();
+        	}
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+}, [settingsOpen, history]);
+    const navigate = (p) => {
+        setPage(p);
+        window.scrollTo(0, 0);
+    };
+    const openAssessment = (a) => {
+        setAssessmentId(a.id);
+        setMemberIndex(0);
+        navigate("assessment");
+    };
+    const startRun = async () => {
+        if (creating) return;
+        setCreateError("");
+        const selected = teams.find((t) => String(t._id) === String(selectedTeamId));
+        if (!selected) {
+            setCreateError("Select an existing MongoDB team.");
+            return;
+        }
+        const number = Number(sprint);
+        if (!Number.isInteger(number) || number < 1 || number > 999) {
+            setCreateError("Enter a valid sprint number from 1 to 999.");
+            return;
+        }
+        setCreating(true);
+        try {
+            const created = await createAssessment({
+                teamId: String(selected._id),
+                sprint: number,
+            });
+            const records = await loadAssessments();
+            setAssessments(records);
+            setAssessmentId(String(created._id));
+            setMemberIndex(0);
+            setStage(0);
+            setSeconds(0);
+            navigate("processing");
+        } catch (error) {
+            setCreateError(error.message);
+        } finally {
+            setCreating(false);
+        }
+    };
+    const reloadAssessments = async () => {
+        const records = await loadAssessments();
+        setAssessments(records);
+        await refreshAudit();
+    };
+    const saveManualEvaluation = async () => {
+        setManualError("");
+        if (!manualRecommendation.trim() || !evidenceNotes.trim()) {
+            setManualError("Enter a recommendation and supporting evidence notes.");
+            return;
+        }
+        setManualBusy(true);
+        try {
+            await createManualEvaluation(assessment.id, {
+                memberId: String(member.id),
+                recommendation: manualRecommendation,
+                evidenceNotes,
+            });
+            await reloadAssessments();
+            setManualRecommendation("");
+            setEvidenceNotes("");
+        } catch (error) {
+            setManualError(error.message);
+        } finally {
+            setManualBusy(false);
+        }
+    };
+    const toggleReviewed = async () => {
+        setReviewError("");
+        if (!member.evaluationId) {
+            setReviewError("This member has no evaluation to review.");
+            return;
+        }
+        setReviewBusy(true);
+        try {
+            await setEvaluationReviewed(member.evaluationId, !member.reviewed);
+            await reloadAssessments();
+        } catch (error) {
+            setReviewError(error.message);
+        } finally {
+            setReviewBusy(false);
+        }
+    };
+    const finishAssessment = async () => {
+        setConfirmError("");
+        if (
+            !window.confirm(
+                "Confirm this assessment? All members must have reviewed evaluations. Confirmation locks recommendations and weights.",
+            )
+        )
+            return;
+        setConfirmBusy(true);
+        try {
+            await confirmAssessment(assessment.id);
+            await reloadAssessments();
+        } catch (error) {
+            setConfirmError(error.message);
+        } finally {
+            setConfirmBusy(false);
+        }
+    };
+    const editMember = () => {
+        if (assessment.teacherConfirmed) return;
+        setDraft(currentEdit.recommendation ?? member.recommendation);
+        setSaveError("");
+        setEditing(true);
+        navigate("refinement");
+    };
+    const refreshAudit = async () => {
+        try {
+            const logs = await loadAuditLogs();
+            const grouped = {};
+            for (const log of logs) {
+                const id = String(log.evaluationId || "");
+                const entry = {
+                    message: log.action || "Recommendation updated",
+                    date: log.createdAt ? new Date(log.createdAt).toLocaleString() : "",
+                    detail: `${log.fieldChanged || "Recommendation"}: ${String(log.previousValue ?? "(empty)")} → ${String(log.newValue ?? "(empty)")}`,
+                };
+                if (!grouped[id]) grouped[id] = [];
+                grouped[id].push(entry);
+            }
+            setAudit(grouped);
+            setAuditError("");
+        } catch (error) {
+            setAuditError(error.message);
+        }
+    };
+    useEffect(() => {
+        refreshAudit();
+    }, []);
+    const saveMember = async () => {
+        setSaveError("");
+        if (assessment.teacherConfirmed) {
+            setSaveError("Confirmed assessments are locked.");
+            return;
+        }
+        if (!draft.trim()) {
+            setSaveError("Enter a recommendation before saving.");
+            return;
+        }
+        if (!member.evaluationId) {
+            setSaveError("This member has no evaluation in MongoDB. No changes were saved.");
+            return;
+        }
+        if (saving) return;
+        setSaving(true);
+        try {
+            const saved = await saveEvaluationDecision(member.evaluationId, draft);
+            setAssessments((items) =>
+                items.map((item) =>
+                    item.id !== assessment.id
+                        ? item
+                        : {
+                              ...item,
+                              members: item.members.map((person) =>
+                                  person.id !== member.id
+                                      ? person
+                                      : {
+                                            ...person,
+                                            recommendation: saved.recommendation,
+                                        },
+                              ),
+                          },
+                ),
+            );
+            setEdits((e) => ({ ...e, [key]: { ...e[key], recommendation: saved.recommendation } }));
+            await refreshAudit();
+            setEditing(false);
+            navigate("assessment");
+        } catch (error) {
+            setSaveError(error.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+    const adjustWeight = (index, target) => {
+        const result = rebalanceWeights(draftWeights, index, target);
+        if (result.blocked) {
+            setWeightError(result.blocked);
+            return;
+        }
+        if (results.values.every ((v, i) => v === draftWeights[i])) return;
+        setHistory((h) => [[...draftWeights], ...h]);
+        setDraftWeights(result.values);
+        setWeightError("");
+    };
+    const openSettings = () => {
+        const databaseWeights = assessment.metricWeights || {};
+        const keys = Object.keys(databaseWeights);
+        setWeightKeys(keys);
+        setDraftWeights(keys.length ? keys.map((k) => databaseWeights[k]) : [...weights]);
+        setWeightError("");
+        setHistory([]);
+        setAddingMetric(false);
+        setNewMetricName("");
+        setProfileId("");
+        setProfileName("");
+        loadWeightProfiles()
+            .then(setProfiles)
+            .catch((error) => setWeightError(error.message));
+        setSettingsOpen(true);
+    };
+    const applicableProfiles = profiles.filter((profile) => {
+        const selectedTeam = teams.find(
+            (team) => String(team.teamName) === String(assessment.team),
+        );
+        return (
+            selectedTeam &&
+            String(profile.teacherId) === String(selectedTeam.teacherId) &&
+            String(profile.unitCode) === String(assessment.unit) &&
+            weightKeys.length === Object.keys(profile.metrics || {}).length &&
+            weightKeys.every((key) => Object.hasOwn(profile.metrics || {}, key))
+        );
+    });
+    const applyProfile = () => {
+        const profile = applicableProfiles.find((item) => String(item._id) === profileId);
+        if (!profile) {
+            setWeightError("Select a compatible profile.");
+            return;
+        }
+        setHistory((h) => [[...draftWeights], ...h]);
+        setDraftWeights(weightKeys.map((key) => profile.metrics[key]));
+        setWeightError("");
+    };
+    const saveProfile = async () => {
+        setWeightError("");
+        const selectedTeam = teams.find(
+            (team) => String(team.teamName) === String(assessment.team),
+        );
+        if (!selectedTeam) {
+            setWeightError("The assessment team could not be resolved.");
+            return;
+        }
+        if (!profileName.trim()) {
+            setWeightError("Enter a profile name.");
+            return;
+        }
+        setProfileBusy(true);
+        try {
+            await createWeightProfile({
+                teamId: String(selectedTeam._id),
+                profileName: profileName.trim(),
+                metrics: Object.fromEntries(
+                    weightKeys.map((key, index) => [key, draftWeights[index]]),
+                ),
+            });
+            setProfiles(await loadWeightProfiles());
+            setProfileName("");
+        } catch (error) {
+            setWeightError(error.message);
+        } finally {
+            setProfileBusy(false);
+        }
+    };
+    const saveSettings = async () => {
+        if (savingWeights) return;
+        if (assessment.teacherConfirmed) {
+            setWeightError("Confirmed assessments are locked.");
+            return;
+        }
+        setWeightError("");
+        if (!assessment.isDatabaseRecord) {
+            setWeights([...draftWeights]);
+            setSettingsOpen(false);
+            return;
+        }
+        const metricWeights = Object.fromEntries(
+            weightKeys.map((key, index) => [key, draftWeights[index]]),
+        );
+        setSavingWeights(true);
+        try {
+            const saved = await saveAssessmentWeights(assessment.id, metricWeights);
+            setAssessments((items) =>
+                items.map((item) =>
+                    item.id === assessment.id
+                        ? {
+                              ...item,
+                              metricWeights: saved.metricWeights,
+                          }
+                        : item,
+                ),
+            );
+            setSettingsOpen(false);
+            await refreshAudit();
+        } catch (error) {
+            setWeightError(error.message);
+        } finally {
+            setSavingWeights(false);
+        }
+    };
+    const upload = (e) => {
+        setDocs((old) => [
+            ...old,
+            ...Array.from(e.target.files || []).map((f) => ({ name: f.name, size: f.size })),
+        ]);
+        e.target.value = "";
+    };
+    const heading = (text) => <h2>{text}</h2>;
+    return (
+        <div className="site">
+            {page === "home" && (
+                <>
+                    <header className="site_header">
+                        <strong>{unit} Assessment</strong>
+                        <span>{teacherLabel}</span>
+                    </header>
+                    <div className="home_shell">
+                        <aside className="sidebar">
+                            <button onClick={() => navigate("home")}>Assessments +</button>
+                            <button onClick={openSettings}>Config</button>
+                            <button onClick={() => navigate("audit")}>Audit Log</button>
+                        </aside>
+                        <main className="home_content">
+                            <h1>Assessments</h1>
+                            {teacherError && (
+                                <p role="alert">Teacher information unavailable: {teacherError}</p>
+                            )}
+                            {associatedTeacher && (
+                                <section className="panel">
+                                    <h2>Associated educator</h2>
+                                    <p>
+                                        <strong>{associatedTeacher.name}</strong> ·{" "}
+                                        {associatedTeacher.email}
+                                    </p>
+                                    <p>
+                                        Role: {associatedTeacher.role} · Unit:{" "}
+                                        {activeTeam?.unitCode || assessment.unit}
+                                    </p>
+                                </section>
+                            )}
+                            {loadingAssessments && <p>Loading assessments...</p>}
+                            {loadError && (
+                                <p role="alert">Could not load assessments: {loadError}</p>
+                            )}
+                            {!loadingAssessments && !loadError && assessments.length === 0 && (
+                                <p>No assessments found.</p>
+                            )}
+                            <div className="home_toolbar">
+                                <input
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Search by unit or team"
+                                />
+                                <button className="primary" onClick={() => navigate("new")}>
+                                    New assessment
+                                </button>
+                            </div>
+                            {assessments
+                                .filter((a) =>
+                                    (a.title + " " + a.unit)
+                                        .toLowerCase()
+                                        .includes(search.toLowerCase()),
+                                )
+                                .map((a) => (
+                                    <div className="assessment_row" key={a.id}>
+                                        <div>
+                                            <strong>{a.title}</strong>
+                                            <small>
+                                                {a.members.length} members, {a.unit}
+                                            </small>
+                                        </div>
+                                        <button onClick={() => openAssessment(a)}>Open</button>
+                                    </div>
+                                ))}
+                        </main>
+                    </div>
+                </>
+            )}
+            {page === "new" && (
+                <main className="narrow">
+                    <div className="top_actions">
+                        <button onClick={() => navigate("home")}>‹ Assessments</button>
+                    </div>
+                    <section className="panel">
+                        <h2>Team</h2>
+                        <div className="two_inputs">
+                            <label>
+                                Team
+                                <select
+                                    value={selectedTeamId}
+                                    onChange={(e) => setSelectedTeamId(e.target.value)}
+                                >
+                                    {teams.map((item) => (
+                                        <option key={item._id} value={item._id}>
+                                            {item.teamName} ({item.unitCode})
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label>
+                                Sprint
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="999"
+                                    value={sprint}
+                                    onChange={(e) => setSprint(e.target.value)}
+                                />
+                            </label>
+                        </div>
+                    </section>
+                    <section className="panel">
+                        <h2>Documents</h2>
+                        <label className="upload">
+                            Drop files, or browse
+                            <input type="file" multiple onChange={upload} />
+                            <span>PDF, DOCX, MD · up to 20 files</span>
+                        </label>
+                        {docs.map((d, i) => (
+                            <div className="file_row" key={i}>
+                                {d.name}
+                                <button onClick={() => setDocs((x) => x.filter((_, j) => j !== i))}>
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </section>
+                    <section className="panel">
+                        <h2>Repository</h2>
+                        <input
+                            value={repo}
+                            onChange={(e) => setRepo(e.target.value)}
+                            placeholder="GitHub repository link"
+                        />
+                    </section>
+                    <section className="panel compact">
+                        <span>Weighting</span>
+                        <button onClick={openSettings}>Edit</button>
+                    </section>
+                    <div className="footer_actions">
+                        {createError && <p role="alert">{createError}</p>}
+                        <button className="primary" onClick={startRun} disabled={creating}>
+                            {creating ? "Creating..." : "Run assessment"}
+                        </button>
+                    </div>
+                </main>
+            )}
+            {page === "processing" && (
+                <main className="narrow">
+                    <h1>Assessment created</h1>
+                    <section className="panel">
+                        <p>Your draft assessment has been created.</p>
+                    </section>
+                    <div className="footer_actions">
+                        <button onClick={() => navigate("home")}>Back to assessments</button>
+                        <button className="primary" onClick={() => navigate("assessment")}>
+                            Open draft assessment
+                        </button>
+                    </div>
+                </main>
+            )}
+            {page === "assessment" && (
+                <main className="narrow">
+                    <div className="top_actions">
+                        <button onClick={() => navigate("home")}>‹ Assessments</button>
+                        <strong>{assessment.title}</strong>
+                    </div>
+                    <p>Educator: {teacherLabel}</p>
+                    <section className="panel">
+                        <h2>Member Select</h2>
+                        <div className="member_tabs">
+                            {assessment.members.map((m, i) => (
+                                <button
+                                    key={i}
+                                    className={i === memberIndex ? "selected" : ""}
+                                    onClick={() => setMemberIndex(i)}
+                                >
+                                    {m.name}
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+                    <section className="panel">
+                        <h2>{member.name}</h2>
+                        <div className="evidence_group">
+                            <strong>Verified claims</strong>
+                            <ul>
+                                {member.verified.map((s, i) => (
+                                    <li key={i}>{s}</li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="evidence_group">
+                            <strong>Unverified claims</strong>
+                            <ul>
+                                {member.unverified.map((s, i) => (
+                                    <li key={i}>{s}</li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="evidence_group">
+                            <strong>Unclaimed work</strong>
+                            <ul>
+                                {member.unclaimed.map((s, i) => (
+                                    <li key={i}>{s}</li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="evidence_group">
+                            <strong>Peer review</strong>
+                            <ul>
+                                {member.peer.map((s, i) => (
+                                    <li key={i}>{s}</li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="recommendation">
+                            <strong>Overall recommendation</strong>
+                            <p>{currentEdit.recommendation ?? member.recommendation}</p>
+                            <button
+                                onClick={editMember}
+                                disabled={assessment.teacherConfirmed || !member.evaluationId}
+                            >
+                                Edit
+                            </button>
+                        </div>
+                        <div className="footer_actions">
+                            <strong>
+                                Evaluation review:{" "}
+                                {member.evaluationId
+                                    ? member.reviewed
+                                        ? "Reviewed"
+                                        : "Not reviewed"
+                                    : "No evaluation"}
+                            </strong>
+                            <button
+                                onClick={toggleReviewed}
+                                disabled={
+                                    reviewBusy ||
+                                    assessment.teacherConfirmed ||
+                                    !member.evaluationId
+                                }
+                            >
+                                {reviewBusy
+                                    ? "Saving..."
+                                    : member.reviewed
+                                      ? "Reopen review"
+                                      : "Mark reviewed"}
+                            </button>
+                        </div>
+                        {reviewError && <p role="alert">{reviewError}</p>}
+                    </section>
+                    {!member.evaluationId && !assessment.teacherConfirmed && (
+                        <section className="panel">
+                            <h2>Create manual evaluation</h2>
+                            <label className="text_label">
+                                Supporting evidence notes
+                                <textarea
+                                    rows="4"
+                                    value={evidenceNotes}
+                                    onChange={(e) => setEvidenceNotes(e.target.value)}
+                                    placeholder="Describe the evidence you reviewed and its source"
+                                />
+                            </label>
+                            <label className="text_label">
+                                Educator recommendation
+                                <textarea
+                                    rows="5"
+                                    value={manualRecommendation}
+                                    onChange={(e) => setManualRecommendation(e.target.value)}
+                                    placeholder="Write your assessment of this student's contribution"
+                                />
+                            </label>
+                            {manualError && <p role="alert">{manualError}</p>}
+                            <button
+                                className="primary"
+                                onClick={saveManualEvaluation}
+                                disabled={manualBusy}
+                            >
+                                {manualBusy ? "Saving..." : "Save manual evaluation"}
+                            </button>
+                        </section>
+                    )}
+                    <section className="panel">
+                        <h2>Assessment confirmation</h2>
+                        <p>
+                            Status: {assessment.status}
+                            {assessment.teacherConfirmed ? " (confirmed and locked)" : ""}
+                        </p>
+                        {confirmError && <p role="alert">{confirmError}</p>}
+                        <button
+                            className="primary"
+                            onClick={finishAssessment}
+                            disabled={confirmBusy || assessment.teacherConfirmed}
+                        >
+                            {confirmBusy
+                                ? "Confirming..."
+                                : assessment.teacherConfirmed
+                                  ? "Confirmed"
+                                  : "Confirm assessment"}
+                        </button>
+                    </section>
+                </main>
+            )}
+            {page === "refinement" && (
+                <main className="narrow">
+                    <div className="top_actions">
+                        <button onClick={() => navigate("assessment")}>‹ Back to assessment</button>
+                    </div>
+                    <section className="panel">
+                        <h1>Editing recommendation</h1>
+                        <label className="text_label">
+                            Recommendation
+                            <textarea
+                                rows="6"
+                                value={draft}
+                                onChange={(e) => setDraft(e.target.value)}
+                            />
+                        </label>
+                        {saveError && <p role="alert">{saveError}</p>}
+                        <strong>Verified claims:</strong>
+                        <ul>
+                            {member.verified.map((s, i) => (
+                                <li key={i}>{s}</li>
+                            ))}
+                        </ul>
+                        <div className="footer_actions">
+                            <button onClick={() => navigate("assessment")}>Cancel</button>
+                            <button className="primary" onClick={saveMember} disabled={saving}>
+                                {saving ? "Saving..." : "Save"}
+                            </button>
+                        </div>
+                    </section>
+                    <section className="panel">
+                        <h2>Audit log</h2>
+                        {memberAudit.map((a, i) => (
+                            <div className="audit_item" key={i}>
+                                <button onClick={() => setExpanded(expanded === i ? -1 : i)}>
+                                    {a.date}: {a.message} {expanded === i ? "⌃" : "⌄"}
+                                </button>
+                                {expanded === i && <p>{a.detail}</p>}
+                            </div>
+                        ))}
+                    </section>
+                </main>
+            )}
+            {page === "audit" && (
+                <main className="narrow">
+                    <div className="top_actions">
+                        <button onClick={() => navigate("home")}>‹ Assessments</button>
+                    </div>
+                    <section className="panel">
+                        <h1>Audit Log</h1>
+                        {auditError && <p role="alert">{auditError}</p>}
+                        {Object.entries(audit).flatMap(([k, v]) =>
+                            v.map((a, i) => (
+                                <p key={k + i}>
+                                    {a.date} — {a.message}: {a.detail}
+                                </p>
+                            )),
+                        )}
+                    </section>
+                </main>
+            )}
+            {settingsOpen && (
+                <div className="modal_backdrop">
+                    <div className="modal">
+                        <div className="modal_heading">
+                            <h2>Settings</h2>
+                            <button onClick={() => setSettingsOpen(false)}>×</button>
+                        </div>
+                        {(assessment.isDatabaseRecord
+                            ? weightKeys.map(labelForMetric)
+                            : [...metricNames, ...customMetric]
+                        ).map((name, i) => (
+                            <div className="weight_row" key={name}>
+                                <div>
+                                    <strong>{name}</strong>
+                                    <span>{draftWeights[i] || 0}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={draftWeights[i] || 0}
+                                    onChange={(e) => adjustWeight(i, e.target.value)}
+                                />
+                            </div>
+                        ))}
+                        {assessment.isDatabaseRecord && (
+                            <div className="profile_controls">
+                                <h3>Reusable weight profiles</h3>
+                                <label>
+                                    Saved profiles
+                                    <select
+                                        value={profileId}
+                                        onChange={(e) => setProfileId(e.target.value)}
+                                    >
+                                        <option value="">Select a profile</option>
+                                        {applicableProfiles.map((profile) => (
+                                            <option key={profile._id} value={profile._id}>
+                                                {profile.profileName}
+                                                {profile.isDefault ? " (Default)" : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={applyProfile}
+                                    disabled={!profileId || assessment.teacherConfirmed}
+                                >
+                                    Load selected profile
+                                </button>
+                                <label>
+                                    New profile name
+                                    <input
+                                        value={profileName}
+                                        onChange={(e) => setProfileName(e.target.value)}
+                                        placeholder="Profile name"
+                                        maxLength="100"
+                                    />
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={saveProfile}
+                                    disabled={profileBusy || !profileName.trim()}
+                                >
+                                    {profileBusy ? "Saving profile..." : "Save as new profile"}
+                                </button>
+                            </div>
+                        )}
+                        {weightError && <p role="alert">{weightError}</p>}
+                        <div className="weight_info">
+                            Rebalanced automatically{" "}
+                            <button
+                                onClick={() => {
+                                    if (history.length) {
+                                        setDraftWeights(history[0]);
+                                        setHistory((h) => h.slice(1));
+                                    }
+                                }}
+                                disabled={!history.length}
+                            >
+                                UNDO
+                            </button>
+                        </div>
+                        {addingMetric && (
+                            <div className="add_metric_row">
+                                <input
+                                    value={newMetricName}
+                                    onChange={(e) => setNewMetricName(e.target.value)}
+                                    placeholder="Metric name"
+                                    aria-label="Metric name"
+                                />
+                                <button
+                                    onClick={() => {
+                                        if (newMetricName.trim()) {
+                                            setCustomMetric((x) => [...x, newMetricName.trim()]);
+                                            setDraftWeights((x) => [...x, 0]);
+                                            setNewMetricName("");
+                                            setAddingMetric(false);
+                                        }
+                                    }}
+                                >
+                                    Add
+                                </button>
+                                <button onClick={() => setAddingMetric(false)}>Cancel</button>
+                            </div>
+                        )}
+                        <div className="footer_actions">
+                            <button onClick={() => setSettingsOpen(false)}>Cancel</button>
+                            <button
+                                onClick={saveSettings}
+                                disabled={savingWeights || assessment.teacherConfirmed}
+                                className="primary"
+                            >
+                                {savingWeights ? "Saving..." : "Save"}
+                            </button>
+                            {!assessment.isDatabaseRecord && (
+                                <button onClick={() => setAddingMetric(true)}>
+                                    + Add new metric
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
 export default App;

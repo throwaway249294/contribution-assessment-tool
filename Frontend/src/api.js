@@ -56,7 +56,7 @@ export async function loadAssessments() {
                 githubUsername: person.githubUsername || "",
                 verified: evidenceText(evidence.verified),
                 unverified: evidenceText(evidence.unverified),
-                wrongly: evidenceText(evidence.unclaimed),
+                unclaimed: evidenceText(evidence.unclaimed),
                 peer: evidenceText(evidence.peerFeedback),
                 recommendation: evaluation?.teacherDecision?.recommendation
                     || evaluation?.aiRecommendation?.summary
