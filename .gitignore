@@ -3,3 +3,9 @@ node_modules/
 .env.*
 !.env.example
 dist/
+
+Backend/src/extractor/repos/
+Backend/src/extractor/data/
+Backend/src/extractor/tests/tmp/
+
+.DS_Store
