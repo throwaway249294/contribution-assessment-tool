@@ -1,6 +1,6 @@
 # JEV decision assessment
 
-`jevlocal.py` reads the bundled `ceahcontribution-negative.pdf` and the JSON
+`jevlocal.py` reads a PDF and the JSON
 rubrics in `metrics/`, then sends each assessment to LM Studio at
 `http://127.0.0.1:1234/v1/systemone` using the `vllm-d3-mini` model.
 The local LM Studio server and LM Link connection must be running.
