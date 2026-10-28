@@ -15,7 +15,12 @@ import {
 } from "./api";
 import "./styles.css";
 import { rebalanceWeights } from "./weights";
-const DEFAULT_WEIGHTS = { taskCompletion: 25, collaboration: 25, contributionQuality: 25, evidenceTraceability: 25 };
+const DEFAULT_WEIGHTS = {
+    taskCompletion: 25,
+    collaboration: 25,
+    contributionQuality: 25,
+    evidenceTraceability: 25,
+};
 const DEFAULT_KEYS = Object.keys(DEFAULT_WEIGHTS);
 const labelForMetric = (key) =>
     key
@@ -64,13 +69,14 @@ function App() {
     const [profileName, setProfileName] = useState("");
     const [profileBusy, setProfileBusy] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [settingsMode, setSettingsMode] = useState("new");
+    const [newWeights, setNewWeights] = useState(DEFAULT_WEIGHTS);
     const [history, setHistory] = useState([]);
     const [draftWeights, setDraftWeights] = useState(DEFAULT_KEYS.map((k) => DEFAULT_WEIGHTS[k]));
-    const [openedWeights, setOpenedWeights] = useState(DEFAULT_KEYS.map((k) => DEFAULT_WEIGHTS[k]));
     const [lastAuto, setLastAuto] = useState([]);
-    const [weightNote, setWeightNote] = useState("");
     const lastAdjustAt = useRef(0);
-    const gestureStart = useRef(null);    const [weightKeys, setWeightKeys] = useState(DEFAULT_KEYS);
+    const gestureStart = useRef(null);
+    const [weightKeys, setWeightKeys] = useState(DEFAULT_KEYS);
     const [weightError, setWeightError] = useState("");
     const [savingWeights, setSavingWeights] = useState(false);
     const [editing, setEditing] = useState(false);
@@ -98,8 +104,10 @@ function App() {
     const key = assessment.id + "_" + memberIndex;
     const currentEdit = edits[key] || {};
     const memberAudit = audit[String(member.evaluationId)] || [];
-    const weightsLocked = assessment.teacherConfirmed;
-    const weightsChanged = draftWeights.some((v, i) => v !== openedWeights[i]);
+    const selectedTeam = teams.find((t) => String(t._id) === String(selectedTeamId));
+    const settingsTeam = settingsMode === "new" ? selectedTeam : activeTeam;
+    const settingsUnit = settingsTeam?.unitCode || (settingsMode === "new" ? unit : assessment.unit);
+    const weightsLocked = settingsMode === "assessments" && assessment.teacherConfirmed;
     useEffect(() => {
         let active = true;
         loadTeachers()
@@ -137,18 +145,18 @@ function App() {
         };
     }, []);
     useEffect(() => {
-    	if (!settingsOpen) return;
-    	const onKey = (e) => {
-        	if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
-            	const tag = e.target?.tagName;
-            	if (tag === "TEXTAREA" || (tag === "INPUT" && e.target.type !== "range")) return;
-            	e.preventDefault();
-            	undoWeights();
-        	}
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-}, [settingsOpen, history]);
+        if (!settingsOpen) return;
+        const onKey = (e) => {
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
+                const tag = e.target?.tagName;
+                if (tag === "TEXTAREA" || (tag === "INPUT" && e.target.type !== "range")) return;
+                e.preventDefault();
+                undoWeights();
+            }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [settingsOpen, history]);
     const navigate = (p) => {
         setPage(p);
         window.scrollTo(0, 0);
@@ -176,6 +184,7 @@ function App() {
             const created = await createAssessment({
                 teamId: String(selected._id),
                 sprint: number,
+                metricWeights: newWeights,
             });
             const records = await loadAssessments();
             setAssessments(records);
@@ -326,16 +335,47 @@ function App() {
             setSaving(false);
         }
     };
-    const adjustWeight = (index, target) => {
-        const result = rebalanceWeights(draftWeights, index, target);
+    const adjustWeight = (index, value) => {
+        if (weightsLocked) return;
+        const result = rebalanceWeights(draftWeights, index, value);
         if (result.blocked) {
             setWeightError(result.blocked);
             return;
         }
-        if (results.values.every ((v, i) => v === draftWeights[i])) return;
-        setHistory((h) => [[...draftWeights], ...h]);
+        if (result.values.every((v, i) => v === draftWeights[i])) return;
+        // one drag counts as one change, so undo reverses the whole drag
+        const now = Date.now();
+        if (now - lastAdjustAt.current > 600) {
+            setHistory((h) => [draftWeights, ...h].slice(0, 30));
+            gestureStart.current = draftWeights;
+        }
+        lastAdjustAt.current = now;
+        const before = gestureStart.current || draftWeights;
         setDraftWeights(result.values);
+        setLastAuto(
+            result.values.map((_, i) => i).filter((i) => i !== index && result.values[i] !== before[i]),
+        );
         setWeightError("");
+    };
+    const undoWeights = () => {
+        if (!history.length) return;
+        setDraftWeights(history[0]);
+        setHistory((h) => h.slice(1));
+        setLastAuto([]);
+        lastAdjustAt.current = 0;
+    };
+    const resetWeights = () => {
+        const sameKeys =
+            weightKeys.length === DEFAULT_KEYS.length && weightKeys.every((k) => DEFAULT_KEYS.includes(k));
+        const even = Math.floor(100 / weightKeys.length);
+        setHistory((h) => [draftWeights, ...h].slice(0, 30));
+        setDraftWeights(
+            sameKeys
+                ? weightKeys.map((k) => DEFAULT_WEIGHTS[k])
+                : weightKeys.map((_, i) => even + (i === 0 ? 100 - even * weightKeys.length : 0)),
+        );
+        setLastAuto([]);
+        lastAdjustAt.current = 0;
     };
     const openSettings = () => {
         const databaseWeights = assessment.metricWeights || {};
@@ -353,49 +393,47 @@ function App() {
             .catch((error) => setWeightError(error.message));
         setSettingsOpen(true);
     };
-    const applicableProfiles = profiles.filter((profile) => {
-        const selectedTeam = teams.find(
-            (team) => String(team.teamName) === String(assessment.team),
-        );
-        return (
-            selectedTeam &&
-            String(profile.teacherId) === String(selectedTeam.teacherId) &&
-            String(profile.unitCode) === String(assessment.unit) &&
+    const applicableProfiles = profiles.filter(
+        (profile) =>
+            settingsTeam &&
+            String(profile.teacherId) === String(settingsTeam.teacherId) &&
+            String(profile.unitCode) === String(settingsUnit) &&
             weightKeys.length === Object.keys(profile.metrics || {}).length &&
-            weightKeys.every((key) => Object.hasOwn(profile.metrics || {}, key))
-        );
-    });
+            weightKeys.every((key) => Object.hasOwn(profile.metrics || {}, key)),
+    );
     const applyProfile = () => {
         const profile = applicableProfiles.find((item) => String(item._id) === profileId);
         if (!profile) {
             setWeightError("Select a compatible profile.");
             return;
         }
-        setHistory((h) => [[...draftWeights], ...h]);
+        setHistory((h) => [draftWeights, ...h].slice(0, 30));
         setDraftWeights(weightKeys.map((key) => profile.metrics[key]));
+        setLastAuto([]);
         setWeightError("");
     };
     const saveProfile = async () => {
         setWeightError("");
-        const selectedTeam = teams.find(
-            (team) => String(team.teamName) === String(assessment.team),
-        );
-        if (!selectedTeam) {
-            setWeightError("The assessment team could not be resolved.");
+        if (!settingsTeam) {
+            setWeightError("The team could not be resolved.");
             return;
         }
         if (!profileName.trim()) {
             setWeightError("Enter a profile name.");
             return;
         }
+        if (
+            !window.confirm(
+                `Save profile "${profileName.trim()}"? It will be available for every assessment in ${settingsUnit || "this unit"}.`,
+            )
+        )
+            return;
         setProfileBusy(true);
         try {
             await createWeightProfile({
-                teamId: String(selectedTeam._id),
+                teamId: String(settingsTeam._id),
                 profileName: profileName.trim(),
-                metrics: Object.fromEntries(
-                    weightKeys.map((key, index) => [key, draftWeights[index]]),
-                ),
+                metrics: Object.fromEntries(weightKeys.map((key, index) => [key, draftWeights[index]])),
             });
             setProfiles(await loadWeightProfiles());
             setProfileName("");
@@ -406,31 +444,32 @@ function App() {
         }
     };
     const saveSettings = async () => {
-        if (savingWeights) return;
-        if (assessment.teacherConfirmed) {
-            setWeightError("Confirmed assessments are locked.");
-            return;
-        }
+        if (savingWeights || weightsLocked) return;
         setWeightError("");
-        if (!assessment.isDatabaseRecord) {
-            setWeights([...draftWeights]);
+        const metricWeights = Object.fromEntries(weightKeys.map((key, index) => [key, draftWeights[index]]));
+        if (settingsMode === "new") {
+            if (
+                !window.confirm(
+                    "Use these weights for the new assessment? They apply only to the assessment you are about to run.",
+                )
+            )
+                return;
+            setNewWeights(metricWeights);
             setSettingsOpen(false);
             return;
         }
-        const metricWeights = Object.fromEntries(
-            weightKeys.map((key, index) => [key, draftWeights[index]]),
-        );
+        if (
+            !window.confirm(
+                `Save these weights for ${assessment.title}? This changes how this assessment is weighted, and the change is recorded in its audit log.`,
+            )
+        )
+            return;
         setSavingWeights(true);
         try {
             const saved = await saveAssessmentWeights(assessment.id, metricWeights);
             setAssessments((items) =>
                 items.map((item) =>
-                    item.id === assessment.id
-                        ? {
-                              ...item,
-                              metricWeights: saved.metricWeights,
-                          }
-                        : item,
+                    item.id === assessment.id ? { ...item, metricWeights: saved.metricWeights } : item,
                 ),
             );
             setSettingsOpen(false);
@@ -460,7 +499,7 @@ function App() {
                     <div className="home_shell">
                         <aside className="sidebar">
                             <button onClick={() => navigate("home")}>Assessments +</button>
-                            <button onClick={openSettings}>Config</button>
+                            <button onClick={openConfiguration}>Configuration</button>
                             <button onClick={() => navigate("audit")}>Audit Log</button>
                         </aside>
                         <main className="home_content">
@@ -472,8 +511,7 @@ function App() {
                                 <section className="panel">
                                     <h2>Associated educator</h2>
                                     <p>
-                                        <strong>{associatedTeacher.name}</strong> ·{" "}
-                                        {associatedTeacher.email}
+                                        <strong>{associatedTeacher.name}</strong> · {associatedTeacher.email}
                                     </p>
                                     <p>
                                         Role: {associatedTeacher.role} · Unit:{" "}
@@ -482,9 +520,7 @@ function App() {
                                 </section>
                             )}
                             {loadingAssessments && <p>Loading assessments...</p>}
-                            {loadError && (
-                                <p role="alert">Could not load assessments: {loadError}</p>
-                            )}
+                            {loadError && <p role="alert">Could not load assessments: {loadError}</p>}
                             {!loadingAssessments && !loadError && assessments.length === 0 && (
                                 <p>No assessments found.</p>
                             )}
@@ -500,9 +536,7 @@ function App() {
                             </div>
                             {assessments
                                 .filter((a) =>
-                                    (a.title + " " + a.unit)
-                                        .toLowerCase()
-                                        .includes(search.toLowerCase()),
+                                    (a.title + " " + a.unit).toLowerCase().includes(search.toLowerCase()),
                                 )
                                 .map((a) => (
                                     <div className="assessment_row" key={a.id}>
@@ -562,9 +596,7 @@ function App() {
                         {docs.map((d, i) => (
                             <div className="file_row" key={i}>
                                 {d.name}
-                                <button onClick={() => setDocs((x) => x.filter((_, j) => j !== i))}>
-                                    ×
-                                </button>
+                                <button onClick={() => setDocs((x) => x.filter((_, j) => j !== i))}>×</button>
                             </div>
                         ))}
                     </section>
@@ -577,8 +609,13 @@ function App() {
                         />
                     </section>
                     <section className="panel compact">
-                        <span>Weighting</span>
-                        <button onClick={openSettings}>Edit</button>
+                        <span>
+                            <strong>Weighting</strong>
+                            <small>
+                                {DEFAULT_KEYS.map((k) => `${labelForMetric(k)} ${newWeights[k]}%`).join(", ")}
+                            </small>
+                        </span>
+                        <button onClick={() => openSettings("new")}>Edit</button>
                     </section>
                     <div className="footer_actions">
                         {createError && <p role="alert">{createError}</p>}
@@ -607,6 +644,12 @@ function App() {
                     <div className="top_actions">
                         <button onClick={() => navigate("home")}>‹ Assessments</button>
                         <strong>{assessment.title}</strong>
+                        <button
+                            onClick={() => openSettings("assessment")}
+                            disabled={assessment.teacherConfirmed || !assessment.id}
+                        >
+                            Adjust weights
+                        </button>
                     </div>
                     <p>Educator: {teacherLabel}</p>
                     <section className="panel">
@@ -678,11 +721,7 @@ function App() {
                             </strong>
                             <button
                                 onClick={toggleReviewed}
-                                disabled={
-                                    reviewBusy ||
-                                    assessment.teacherConfirmed ||
-                                    !member.evaluationId
-                                }
+                                disabled={reviewBusy || assessment.teacherConfirmed || !member.evaluationId}
                             >
                                 {reviewBusy
                                     ? "Saving..."
@@ -715,11 +754,7 @@ function App() {
                                 />
                             </label>
                             {manualError && <p role="alert">{manualError}</p>}
-                            <button
-                                className="primary"
-                                onClick={saveManualEvaluation}
-                                disabled={manualBusy}
-                            >
+                            <button className="primary" onClick={saveManualEvaluation} disabled={manualBusy}>
                                 {manualBusy ? "Saving..." : "Save manual evaluation"}
                             </button>
                         </section>
@@ -754,11 +789,7 @@ function App() {
                         <h1>Editing recommendation</h1>
                         <label className="text_label">
                             Recommendation
-                            <textarea
-                                rows="6"
-                                value={draft}
-                                onChange={(e) => setDraft(e.target.value)}
-                            />
+                            <textarea rows="6" value={draft} onChange={(e) => setDraft(e.target.value)} />
                         </label>
                         {saveError && <p role="alert">{saveError}</p>}
                         <strong>Verified claims:</strong>
@@ -812,33 +843,49 @@ function App() {
                             <h2>Settings</h2>
                             <button onClick={() => setSettingsOpen(false)}>×</button>
                         </div>
-                        {(assessment.isDatabaseRecord
-                            ? weightKeys.map(labelForMetric)
-                            : [...metricNames, ...customMetric]
-                        ).map((name, i) => (
-                            <div className="weight_row" key={name}>
-                                <div>
-                                    <strong>{name}</strong>
-                                    <span>{draftWeights[i] || 0}</span>
+                        <p>
+                            {settingsMode === "new" ? "For the new assessment" : `For ${assessment.title}`}
+                            {weightsLocked ? " (confirmed and locked)" : ""}
+                        </p>
+                        {weightKeys.map((key, i) => {
+                            const automatic = lastAuto.includes(i);
+                            return (
+                                <div className={"weight_row" + (automatic ? " auto" : "")} key={key}>
+                                    <div>
+                                        <strong>
+                                            {labelForMetric(key)}
+                                            {automatic && <span className="tag">Adjusted automatically</span>}
+                                        </strong>
+                                        <span>{draftWeights[i] || 0}</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={draftWeights[i] || 0}
+                                        disabled={weightsLocked}
+                                        onChange={(e) => adjustWeight(i, e.target.value)}
+                                    />
                                 </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={draftWeights[i] || 0}
-                                    onChange={(e) => adjustWeight(i, e.target.value)}
-                                />
-                            </div>
-                        ))}
-                        {assessment.isDatabaseRecord && (
+                            );
+                        })}
+                        <div className="weight_info">
+                            Undo the last change (Ctrl+Z), or go back to the defaults.
+                            <span>
+                                <button onClick={undoWeights} disabled={!history.length || weightsLocked}>
+                                    UNDO
+                                </button>{" "}
+                                <button onClick={resetWeights} disabled={weightsLocked}>
+                                    Reset to default
+                                </button>
+                            </span>
+                        </div>
+                        {settingsTeam && (
                             <div className="profile_controls">
                                 <h3>Reusable weight profiles</h3>
                                 <label>
                                     Saved profiles
-                                    <select
-                                        value={profileId}
-                                        onChange={(e) => setProfileId(e.target.value)}
-                                    >
+                                    <select value={profileId} onChange={(e) => setProfileId(e.target.value)}>
                                         <option value="">Select a profile</option>
                                         {applicableProfiles.map((profile) => (
                                             <option key={profile._id} value={profile._id}>
@@ -851,7 +898,7 @@ function App() {
                                 <button
                                     type="button"
                                     onClick={applyProfile}
-                                    disabled={!profileId || assessment.teacherConfirmed}
+                                    disabled={!profileId || weightsLocked}
                                 >
                                     Load selected profile
                                 </button>
@@ -874,57 +921,15 @@ function App() {
                             </div>
                         )}
                         {weightError && <p role="alert">{weightError}</p>}
-                        <div className="weight_info">
-                            Rebalanced automatically{" "}
-                            <button
-                                onClick={() => {
-                                    if (history.length) {
-                                        setDraftWeights(history[0]);
-                                        setHistory((h) => h.slice(1));
-                                    }
-                                }}
-                                disabled={!history.length}
-                            >
-                                UNDO
-                            </button>
-                        </div>
-                        {addingMetric && (
-                            <div className="add_metric_row">
-                                <input
-                                    value={newMetricName}
-                                    onChange={(e) => setNewMetricName(e.target.value)}
-                                    placeholder="Metric name"
-                                    aria-label="Metric name"
-                                />
-                                <button
-                                    onClick={() => {
-                                        if (newMetricName.trim()) {
-                                            setCustomMetric((x) => [...x, newMetricName.trim()]);
-                                            setDraftWeights((x) => [...x, 0]);
-                                            setNewMetricName("");
-                                            setAddingMetric(false);
-                                        }
-                                    }}
-                                >
-                                    Add
-                                </button>
-                                <button onClick={() => setAddingMetric(false)}>Cancel</button>
-                            </div>
-                        )}
                         <div className="footer_actions">
                             <button onClick={() => setSettingsOpen(false)}>Cancel</button>
                             <button
                                 onClick={saveSettings}
-                                disabled={savingWeights || assessment.teacherConfirmed}
+                                disabled={savingWeights || weightsLocked}
                                 className="primary"
                             >
                                 {savingWeights ? "Saving..." : "Save"}
                             </button>
-                            {!assessment.isDatabaseRecord && (
-                                <button onClick={() => setAddingMetric(true)}>
-                                    + Add new metric
-                                </button>
-                            )}
                         </div>
                     </div>
                 </div>
