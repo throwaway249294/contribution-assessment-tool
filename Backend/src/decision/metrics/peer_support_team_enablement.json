@@ -1,0 +1,14 @@
+{
+  "metric": "peer_support_team_enablement",
+  "type": "noul",
+  "definition": "The student describes assisting teammates or enabling someone else's task, beyond simply completing their own assigned work.",
+  "positive_criteria": [
+    "Describes helping a teammate debug, learn, or complete a task",
+    "Describes reviewing work, sharing tools, or removing a blocker to support another person's task"
+  ],
+  "negative_criteria": [
+    "Explicitly reports providing no peer assistance",
+    "Describes only the student's own tasks without an identifiable action supporting teammates"
+  ],
+  "source": "<student report>"
+}

@@ -1,0 +1,14 @@
+{
+  "metric": "contribution_consistency",
+  "type": "noul",
+  "definition": "The student completed multiple tasks to a roughly similar standard of quality and completeness. Compare standards rather than task size, complexity, or time spent. One task alone does not establish consistency.",
+  "positive_criteria": [
+    "Multiple completed tasks show comparable care, validation, and completeness",
+    "Describes consistently meeting the same acceptance or quality standard across tasks"
+  ],
+  "negative_criteria": [
+    "Reports uneven quality or completeness across comparable tasks",
+    "Some tasks meet the expected standard while others have acknowledged omissions or avoidable defects"
+  ],
+  "source": "<student report>"
+}

@@ -1,0 +1,14 @@
+{
+  "metric": "stakeholder_feedback",
+  "type": "noul",
+  "definition": "The student reports receiving positive feedback from the client about their own work or a deliverable they contributed to. Do not invent client feedback or substitute self-assessment for it.",
+  "positive_criteria": [
+    "Explicitly reports favorable client feedback on the work",
+    "Reports client approval or satisfaction with a specific contribution"
+  ],
+  "negative_criteria": [
+    "Reports unfavorable client feedback",
+    "Provides no reported positive client feedback or only the student's own opinion"
+  ],
+  "source": "<student report>"
+}

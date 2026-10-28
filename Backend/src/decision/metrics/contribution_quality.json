@@ -1,0 +1,14 @@
+{
+  "metric": "contribution_quality",
+  "type": "noul",
+  "definition": "Conservatively assess whether the described contribution is plausibly consistent with approximately 30 hours of work, considering complexity, investigation, implementation, testing, coordination, and documentation. This is a rough plausibility assessment, not a verified timesheet or productivity judgment. Allow for learning, debugging, and work summarized briefly; do not equate task counts, lines of code, or report length with effort. Do not require exactly 30 hours. Missing detail alone is insufficient for a negative assessment.",
+  "positive_criteria": [
+    "The described depth, complexity, and supporting activities make roughly 30 hours of effort plausible",
+    "A credible account of investigation, implementation, testing, or related work supports the approximate effort even if few deliverables are listed"
+  ],
+  "negative_criteria": [
+    "The report explicitly establishes substantially less work than approximately 30 hours, with no additional activities described",
+    "Clear, specific evidence establishes a substantial mismatch between the claimed effort and the work performed; brevity or apparently simple tasks alone do not qualify"
+  ],
+  "source": "<student report>"
+}

@@ -1,0 +1,18 @@
+{
+  "metric": "time_to_fix",
+  "type": "noul",
+  "definition": "Assess whether fixes were completed within an explicitly stated expected duration or target date. Apply a negative score only when the report establishes that a fix took longer than expected. Without both an expectation and an actual duration or completion date, timeliness is unknown.",
+  "positive_criteria": [
+    "Fix duration or completion date is within the stated expectation"
+  ],
+  "negative_criteria": [
+    "Explicitly reports a fix taking longer than its estimate or target",
+    "Provides expected and actual timings that establish an overrun"
+  ],
+  "source": "<student report>",
+  "scoring": {
+    "true": 0,
+    "false": -1,
+    "unknown": null
+  }
+}

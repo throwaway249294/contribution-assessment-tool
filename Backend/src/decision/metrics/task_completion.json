@@ -1,0 +1,19 @@
+{
+  "metric": "task_completion",
+  "type": "noul",
+  "definition": "Assess whether the student completed all tasks due in the reporting period. Apply a negative score only when at least one such task is explicitly unfinished. Exclude future work and tasks explicitly deferred by agreement before they became due.",
+  "positive_criteria": [
+    "Explicitly reports that all tasks due in the period were completed",
+    "Accounts for completion of every task in the stated set of due tasks"
+  ],
+  "negative_criteria": [
+    "Identifies at least one task due in the period that remains incomplete",
+    "Reports a due deliverable as blocked, partially complete, or abandoned without an agreed deferral"
+  ],
+  "source": "<student report>",
+  "scoring": {
+    "true": 0,
+    "false": -1,
+    "unknown": null
+  }
+}

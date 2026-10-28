@@ -1,0 +1,14 @@
+{
+  "metric": "problem_solving_contribution",
+  "type": "noul",
+  "definition": "The completed work addresses a specific identified problem, with a clear link between the problem and the implementation. Distinguish a plausible solution from a verified outcome and do not assume validation occurred.",
+  "positive_criteria": [
+    "Identifies a concrete problem and explains how the completed implementation addresses it",
+    "Reports an observed or tested outcome showing that the implementation resolves or reduces the problem"
+  ],
+  "negative_criteria": [
+    "Describes completed activity without connecting it to a specific problem",
+    "Reports that the implementation failed to address the stated problem"
+  ],
+  "source": "<student report>"
+}

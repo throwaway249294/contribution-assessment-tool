@@ -1,0 +1,15 @@
+{
+  "metric": "initiative",
+  "type": "noul",
+  "definition": "The student independently identifies a need, proposes an action, or begins work without merely carrying out an assigned task.",
+  "positive_criteria": [
+    "Independently identifies a problem",
+    "Proposes a solution or new task",
+    "Takes ownership of work"
+  ],
+  "negative_criteria": [
+    "Only completes explicitly assigned work",
+    "Explicitly only describes actions performed by the team"
+  ],
+  "source": "<student report>"
+}

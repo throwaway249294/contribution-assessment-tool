@@ -1,0 +1,14 @@
+{
+  "metric": "collaboration",
+  "type": "noul",
+  "definition": "The report describes the student actively working with teammates toward shared work. Team membership or repeated use of we alone does not establish collaboration.",
+  "positive_criteria": [
+    "Describes joint implementation, planning, review, or coordination with teammates",
+    "Explains how the student exchanged input or resolved dependencies with teammates"
+  ],
+  "negative_criteria": [
+    "Explicitly describes working independently without teammate interaction",
+    "Mentions the team without describing the student's collaborative actions"
+  ],
+  "source": "<student report>"
+}

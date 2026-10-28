@@ -1,0 +1,14 @@
+{
+  "metric": "on_time_delivery",
+  "type": "noul",
+  "definition": "Determine whether the student delivered the work by the agreed deadline. True requires an explicit statement of on-time delivery or comparable deadline and delivery dates. Missing timing evidence is unknown, not proof of lateness.",
+  "positive_criteria": [
+    "Explicitly states that the work was delivered on or before the agreed deadline",
+    "Delivery and deadline dates establish on-time delivery"
+  ],
+  "negative_criteria": [
+    "Explicitly reports late delivery or a missed deadline",
+    "Delivery and deadline dates establish late delivery"
+  ],
+  "source": "<student report>"
+}
