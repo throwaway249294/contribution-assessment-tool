@@ -860,3 +860,22 @@ select {
     border-radius: 4px;
     opacity: 0.9;
 }
+
+.login_page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.login_panel {
+    width: min(100%, 380px);
+    display: flex;
+    flex-direction: column;
+}
+.login_panel h1 {
+    margin-bottom: 4px;
+}
+.login_panel button {
+    margin-top: 4px;
+}

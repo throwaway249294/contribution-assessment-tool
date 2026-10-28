@@ -37,6 +37,8 @@ function formatValue(value) {
 }
 const HELP_DESK_URL = "https://www.swinburneonline.edu.au/current-students/help/";
 const GUIDE_KEY = "ca_getting_started_dismissed";
+const INSTRUCTOR_LOGIN = { username: "instructor", password: "demo123" };
+const LOGIN_KEY = "ca_logged_in";
 const STAGES = [
     "Checking contributions",
     "Checking commit history",
@@ -45,6 +47,48 @@ const STAGES = [
     "Flagging outliers",
 ];
 const STAGE_MS = 700;
+function LoginPage({ onLogin }) {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const submit = (e) => {
+        e.preventDefault();
+        if (username.trim() === INSTRUCTOR_LOGIN.username && password === INSTRUCTOR_LOGIN.password) {
+            onLogin();
+        } else {
+            setError("Incorrect username or password.");
+        }
+    };
+    return (
+        <main className="login_page">
+            <form className="panel login_panel" onSubmit={submit}>
+                <h1>Contribution Assessment</h1>
+                <p className="muted">Instructor login</p>
+                <label className="text_label">
+                    Username
+                    <input
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        autoComplete="username"
+                    />
+                </label>
+                <label className="text_label">
+                    Password
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="current-password"
+                    />
+                </label>
+                {error && <p role="alert">{error}</p>}
+                <button className="primary" type="submit">
+                    Log in
+                </button>
+            </form>
+        </main>
+    );
+}
 function HelpTip({ id, openTip, setOpenTip, children }) {
     const open = openTip === id;
     return (
@@ -111,6 +155,13 @@ function App() {
     const [expanded, setExpanded] = useState(-1);
     const [openTip, setOpenTip] = useState(null);
     const [helpOpen, setHelpOpen] = useState(false);
+    const [loggedIn, setLoggedIn] = useState(() => {
+        try {
+            return sessionStorage.getItem(LOGIN_KEY) === "1";
+        } catch {
+            return false;
+        }
+    });
     const [showGuide, setShowGuide] = useState(() => {
         try {
             return localStorage.getItem(GUIDE_KEY) !== "1";
@@ -219,6 +270,23 @@ function App() {
             .map((a) => Number(a.sprintNumber) || 0);
         setSprint(String(used.length ? Math.max(...used) + 1 : 1));
     }, [selectedTeamId, assessments]);
+    const logIn = () => {
+        setLoggedIn(true);
+        try {
+            sessionStorage.setItem(LOGIN_KEY, "1");
+        } catch {
+            /* storage unavailable */
+        }
+    };
+    const logOut = () => {
+        setLoggedIn(false);
+        setPage("home");
+        try {
+            sessionStorage.removeItem(LOGIN_KEY);
+        } catch {
+            /* storage unavailable */
+        }
+    };
     const navigate = (p) => {
         setPage(p);
         setOpenTip(null);
@@ -557,9 +625,9 @@ function App() {
         e.target.value = "";
     };
     const heading = (text) => <h2>{text}</h2>;
+    if (!loggedIn) return <LoginPage onLogin={logIn} />;
     return (
         <div className="site">
-            {DEMO_MODE && <div className="demo_badge">Demo mode · sample data, not real students</div>}
             {page === "home" && (
                 <>
                     <header className="site_header">
@@ -572,6 +640,7 @@ function App() {
                             <button onClick={openConfiguration}>Configuration</button>
                             <button onClick={() => navigate("audit")}>Audit Log</button>
                             <button onClick={() => setHelpOpen(true)}>Help</button>
+                            <button onClick={logOut}>Log out</button>
                         </aside>
                         <main className="home_content">
                             <h1>Assessments</h1>
