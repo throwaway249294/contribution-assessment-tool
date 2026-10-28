@@ -9,9 +9,8 @@ import {
     setEvaluationReviewed,
     confirmAssessment,
     createManualEvaluation,
-    loadWeightProfiles,
-    createWeightProfile,
     loadTeachers,
+    DEMO_MODE,
 } from "./api";
 import "./styles.css";
 import { rebalanceWeights } from "./weights";
@@ -94,10 +93,6 @@ function App() {
     const [repo, setRepo] = useState("cos40005-2026/team-04");
     const [docs, setDocs] = useState([]);
     const [stage, setStage] = useState(0);
-    const [profiles, setProfiles] = useState([]);
-    const [profileId, setProfileId] = useState("");
-    const [profileName, setProfileName] = useState("");
-    const [profileBusy, setProfileBusy] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [settingsMode, setSettingsMode] = useState("new");
     const [newWeights, setNewWeights] = useState(DEFAULT_WEIGHTS);
@@ -149,8 +144,6 @@ function App() {
         (draft.trim() !== String(currentEdit.recommendation ?? member.recommendation ?? "").trim() ||
             reason.trim() !== "");
     const selectedTeam = teams.find((t) => String(t._id) === String(selectedTeamId));
-    const settingsTeam = settingsMode === "new" ? selectedTeam : activeTeam;
-    const settingsUnit = settingsTeam?.unitCode || (settingsMode === "new" ? unit : assessment.unit);
     const weightsLocked = settingsMode === "assessment" && assessment.teacherConfirmed;
     useEffect(() => {
         let active = true;
@@ -219,6 +212,13 @@ function App() {
         window.addEventListener("beforeunload", onLeave);
         return () => window.removeEventListener("beforeunload", onLeave);
     }, [refineDirty]);
+    useEffect(() => {
+        if (!selectedTeamId) return;
+        const used = assessments
+            .filter((a) => a.teamId === String(selectedTeamId))
+            .map((a) => Number(a.sprintNumber) || 0);
+        setSprint(String(used.length ? Math.max(...used) + 1 : 1));
+    }, [selectedTeamId, assessments]);
     const navigate = (p) => {
         setPage(p);
         setOpenTip(null);
@@ -508,68 +508,10 @@ function App() {
         setHistory([]);
         setLastAuto([]);
         setWeightError("");
-        setProfileId("");
-        setProfileName("");
         lastAdjustAt.current = 0;
-        loadWeightProfiles()
-            .then(setProfiles)
-            .catch((error) => setWeightError(error.message));
         setSettingsOpen(true);
     };
-    const openConfiguration = () => {
-        navigate("new");
-        openSettings("new");
-    };
-    const applicableProfiles = profiles.filter(
-        (profile) =>
-            settingsTeam &&
-            String(profile.teacherId) === String(settingsTeam.teacherId) &&
-            String(profile.unitCode) === String(settingsUnit) &&
-            weightKeys.length === Object.keys(profile.metrics || {}).length &&
-            weightKeys.every((key) => Object.hasOwn(profile.metrics || {}, key)),
-    );
-    const applyProfile = () => {
-        const profile = applicableProfiles.find((item) => String(item._id) === profileId);
-        if (!profile) {
-            setWeightError("Select a compatible profile.");
-            return;
-        }
-        setHistory((h) => [draftWeights, ...h].slice(0, 30));
-        setDraftWeights(weightKeys.map((key) => profile.metrics[key]));
-        setLastAuto([]);
-        setWeightError("");
-    };
-    const saveProfile = async () => {
-        setWeightError("");
-        if (!settingsTeam) {
-            setWeightError("The team could not be resolved.");
-            return;
-        }
-        if (!profileName.trim()) {
-            setWeightError("Enter a profile name.");
-            return;
-        }
-        if (
-            !window.confirm(
-                `Save profile "${profileName.trim()}"? It will be available for every assessment in ${settingsUnit || "this unit"}.`,
-            )
-        )
-            return;
-        setProfileBusy(true);
-        try {
-            await createWeightProfile({
-                teamId: String(settingsTeam._id),
-                profileName: profileName.trim(),
-                metrics: Object.fromEntries(weightKeys.map((key, index) => [key, draftWeights[index]])),
-            });
-            setProfiles(await loadWeightProfiles());
-            setProfileName("");
-        } catch (error) {
-            setWeightError(error.message);
-        } finally {
-            setProfileBusy(false);
-        }
-    };
+    const openConfiguration = () => openSettings("new");
     const saveSettings = async () => {
         if (savingWeights || weightsLocked) return;
         setWeightError("");
@@ -617,6 +559,7 @@ function App() {
     const heading = (text) => <h2>{text}</h2>;
     return (
         <div className="site">
+            {DEMO_MODE && <div className="demo_badge">Demo mode · sample data, not real students</div>}
             {page === "home" && (
                 <>
                     <header className="site_header">
@@ -781,34 +724,6 @@ function App() {
                     </div>
                 </main>
             )}
-            <section className="panel">
-                <h2>
-                    Team overview
-                    {tip(
-                        "flags",
-                        "Flags mark members whose contribution is unusually high or low compared with the rest of the team. A flag is a prompt to look closer, not a judgement.",
-                    )}
-                </h2>
-                <div className="overview">
-                    {assessment.members.map((m, i) => (
-                        <button
-                            key={m.id || i}
-                            className={"overview_row" + (i === memberIndex ? " selected" : "")}
-                            onClick={() => setMemberIndex(i)}
-                        >
-                            <strong>{m.name}</strong>
-                            <span>
-                                {m.evaluationId
-                                    ? m.reviewed
-                                        ? "Reviewed"
-                                        : "Not reviewed"
-                                    : "No evaluation"}
-                            </span>
-                            <span className={m.flag ? "flag" : "muted"}>{m.flag || "No flag"}</span>
-                        </button>
-                    ))}
-                </div>
-            </section>
             {page === "processing" && (
                 <main className="narrow">
                     <h1>Assessing contributions</h1>
@@ -848,6 +763,34 @@ function App() {
                         </button>
                     </div>
                     <p>Educator: {teacherLabel}</p>
+                    <section className="panel">
+                        <h2>
+                            Team overview
+                            {tip(
+                                "flags",
+                                "Flags mark members whose contribution is unusually high or low compared with the rest of the team. A flag is a prompt to look closer, not a judgement.",
+                            )}
+                        </h2>
+                        <div className="overview">
+                            {assessment.members.map((m, i) => (
+                                <button
+                                    key={m.id || i}
+                                    className={"overview_row" + (i === memberIndex ? " selected" : "")}
+                                    onClick={() => setMemberIndex(i)}
+                                >
+                                    <strong>{m.name}</strong>
+                                    <span>
+                                        {m.evaluationId
+                                            ? m.reviewed
+                                                ? "Reviewed"
+                                                : "Not reviewed"
+                                            : "No evaluation"}
+                                    </span>
+                                    <span className={m.flag ? "flag" : "muted"}>{m.flag || "No flag"}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </section>
                     <section className="panel">
                         <h2>{member.name}</h2>
                         <div className="evidence_group">
@@ -1082,46 +1025,6 @@ function App() {
                                 </button>
                             </span>
                         </div>
-                        {settingsTeam && (
-                            <div className="profile_controls">
-                                <h3>Reusable weight profiles</h3>
-                                <label>
-                                    Saved profiles
-                                    <select value={profileId} onChange={(e) => setProfileId(e.target.value)}>
-                                        <option value="">Select a profile</option>
-                                        {applicableProfiles.map((profile) => (
-                                            <option key={profile._id} value={profile._id}>
-                                                {profile.profileName}
-                                                {profile.isDefault ? " (Default)" : ""}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={applyProfile}
-                                    disabled={!profileId || weightsLocked}
-                                >
-                                    Load selected profile
-                                </button>
-                                <label>
-                                    New profile name
-                                    <input
-                                        value={profileName}
-                                        onChange={(e) => setProfileName(e.target.value)}
-                                        placeholder="Profile name"
-                                        maxLength="100"
-                                    />
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={saveProfile}
-                                    disabled={profileBusy || !profileName.trim()}
-                                >
-                                    {profileBusy ? "Saving profile..." : "Save as new profile"}
-                                </button>
-                            </div>
-                        )}
                         {weightError && <p role="alert">{weightError}</p>}
                         <div className="footer_actions">
                             <button onClick={() => setSettingsOpen(false)}>Cancel</button>

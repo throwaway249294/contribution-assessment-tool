@@ -1,10 +1,10 @@
-
 {
     "name": "contribution-assessment",
     "version": "1.0.0",
     "private": true,
     "type": "module",
     "scripts": {
+        "demo": "vite --host 0.0.0.0 --mode demo",
         "dev": "vite --host 0.0.0.0",
         "build": "vite build",
         "preview": "vite preview"

@@ -1,7 +1,10 @@
+import { demoFetch } from "./demo";
 const API_BASE = "http://localhost:5000/api";
+export const DEMO_MODE = import.meta.env.MODE === "demo";
+const send = DEMO_MODE ? demoFetch : (url, options) => fetch(url, options);
 
 async function readCollection(name) {
-    const response = await fetch(`${API_BASE}/${name}`);
+    const response = await send(`${API_BASE}/${name}`);
 
     if (!response.ok) {
         throw new Error(`Could not load ${name} (HTTP ${response.status})`);
@@ -88,7 +91,7 @@ export async function loadAssessments() {
 
 
 export async function saveEvaluationDecision(evaluationId, recommendation, reason = "") {
-    const response = await fetch(
+    const response = await send(
         `${API_BASE}/evaluations/${encodeURIComponent(evaluationId)}/decision`,
         {
             method: "PATCH",
@@ -112,7 +115,7 @@ export async function loadAuditLogs() {
 
 
 export async function saveAssessmentWeights(assessmentId, metricWeights) {
-    const response = await fetch(
+    const response = await send(
         `${API_BASE}/assessments/${encodeURIComponent(assessmentId)}/weights`,
         {
             method: "PATCH",
@@ -143,7 +146,7 @@ export async function loadTeams() {
 }
 
 export async function createAssessment({ teamId, sprint, metricWeights }) {
-    const response = await fetch(`${API_BASE}/assessments`, {
+    const response = await send(`${API_BASE}/assessments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId, sprint, metricWeights })
@@ -161,7 +164,7 @@ export async function createAssessment({ teamId, sprint, metricWeights }) {
 
 
 async function patchJson(path, payload) {
-    const response = await fetch(`${API_BASE}/${path}`, {
+    const response = await send(`${API_BASE}/${path}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -184,7 +187,7 @@ export function confirmAssessment(assessmentId) {
 
 
 export async function createManualEvaluation(assessmentId, { memberId, recommendation, evidenceNotes }) {
-    const response = await fetch(
+    const response = await send(
         `${API_BASE}/assessments/${encodeURIComponent(assessmentId)}/evaluations`,
         {
             method: "POST",
@@ -206,7 +209,7 @@ export async function loadWeightProfiles() {
 }
 
 export async function createWeightProfile({ teamId, profileName, metrics }) {
-    const response = await fetch(`${API_BASE}/weight-profiles`, {
+    const response = await send(`${API_BASE}/weight-profiles`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId, profileName, metrics })
     });

@@ -846,3 +846,17 @@ select {
     max-width: 360px;
     margin: 18px 0 8px;
 }
+
+.demo_badge {
+    position: fixed;
+    left: 12px;
+    bottom: 12px;
+    z-index: 30;
+    pointer-events: none;
+    background: #111827;
+    color: white;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    opacity: 0.9;
+}
