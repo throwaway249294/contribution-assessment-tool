@@ -61,7 +61,7 @@ export async function loadAssessments() {
                 recommendation: evaluation?.teacherDecision?.recommendation
                     || evaluation?.aiRecommendation?.summary
                     || "No recommendation available.",
-                evaluationStatus: evaluation?.status || "No evaluation",
+                evaluationStatus: evaluation?.status || "No evaluation", flag: evaluation?.flag || null,
                 reviewed: evaluation?.teacherDecision?.reviewed === true
             };
         });

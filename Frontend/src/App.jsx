@@ -713,20 +713,32 @@ function App() {
                         </button>
                     </div>
                     <p>Educator: {teacherLabel}</p>
-                    <section className="panel">
-                        <h2>Member Select</h2>
-                        <div className="member_tabs">
-                            {assessment.members.map((m, i) => (
-                                <button
-                                    key={i}
-                                    className={i === memberIndex ? "selected" : ""}
-                                    onClick={() => setMemberIndex(i)}
-                                >
-                                    {m.name}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
+                    {page === "processing" && (
+    <main className="narrow">
+        <h1>Assessing contributions</h1>
+        <p className="preview_note">
+            Preview: these steps are simulated until the analysis pipeline is connected. Nothing is saved
+            until they finish.
+        </p>
+        <section className="panel">
+            <ol className="stage_list">
+                {STAGES.map((name, i) => (
+                    <li key={name} className={i < stage ? "done" : i === stage ? "current" : ""}>
+                        <span className="stage_mark" aria-hidden="true">
+                            {i < stage ? "✓" : ""}
+                        </span>
+                        {name}
+                    </li>
+                ))}
+            </ol>
+        </section>
+        <div className="footer_actions">
+            <button onClick={cancelRun} disabled={stage >= STAGES.length}>
+                {stage >= STAGES.length ? "Saving..." : "Cancel run"}
+            </button>
+        </div>
+    </main>
+)}
                     <section className="panel">
                         <h2>{member.name}</h2>
                         <div className="evidence_group">
