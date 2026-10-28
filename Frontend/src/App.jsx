@@ -36,6 +36,8 @@ function formatValue(value) {
             .join(", ");
     return String(value);
 }
+const HELP_DESK_URL = https://www.swinburneonline.edu.au/current-students/help/
+const GUIDE_KEY = "ca_getting_started_dismissed";
 const STAGES = [
     "Checking contributions",
     "Checking commit history",
@@ -44,6 +46,21 @@ const STAGES = [
     "Flagging outliers",
 ];
 const STAGE_MS = 700;
+function HelpTip({ id, openTip, setOpenTip, children }) {
+    const open = openTip === id;
+    return (
+        <span className="help_tip">
+            <button type="button" aria-label="Help" aria-expanded={open} onClick={() => setOpenTip(open ? null : id)}>
+                ?
+            </button>
+            {open && (
+                <span className="help_pop" role="note">
+                    {children}
+                </span>
+            )}
+        </span>
+    );
+}
 function App() {
     const [page, setPage] = useState("home");
     const [assessments, setAssessments] = useState([]);
@@ -92,6 +109,15 @@ function App() {
     const [draft, setDraft] = useState("");
 	const [reason, setReason] = useState("");
     const [expanded, setExpanded] = useState(-1);
+const [openTip, setOpenTip] = useState(null);
+const [helpOpen, setHelpOpen] = useState(false);
+const [showGuide, setShowGuide] = useState(() => {
+    try {
+        return localStorage.getItem(GUIDE_KEY) !== "1";
+    } catch {
+        return true;
+    }
+});
     const [audit, setAudit] = useState({});
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
@@ -186,7 +212,8 @@ function App() {
     return () => window.removeEventListener("beforeunload", onLeave);
 }, [refineDirty]);
 const navigate = (p) => {
-        setPage(p);
+    setPage(p);
+    setOpenTip(null);
         window.scrollTo(0, 0);
     };
     const openAssessment = (a) => {
@@ -194,7 +221,20 @@ const navigate = (p) => {
         setMemberIndex(0);
         navigate("assessment");
     };
-    const startRun = () => {
+const dismissGuide = () => {
+    setShowGuide(false);
+    try {
+        localStorage.setItem(GUIDE_KEY, "1");
+    } catch {
+        /* storage unavailable */
+    }
+};
+const tip = (id, text) => (
+    <HelpTip id={id} openTip={openTip} setOpenTip={setOpenTip}>
+        {text}
+    </HelpTip>
+);
+const startRun = () => {
         setCreateError("");
         if (!selectedTeam) {
             setCreateError("Select a team.");
@@ -568,9 +608,28 @@ const navigate = (p) => {
                             <button onClick={() => navigate("home")}>Assessments +</button>
                             <button onClick={openConfiguration}>Configuration</button>
                             <button onClick={() => navigate("audit")}>Audit Log</button>
-                        </aside>
+                            <button onClick={() => setHelpOpen(true)}>Help</button>
+</aside>
                         <main className="home_content">
                             <h1>Assessments</h1>
+{showGuide && (
+    <section className="panel">
+        <h2>Getting started</h2>
+        <ol>
+            <li>
+                Create a new assessment, select the team and the sprint and upload documents as you see fit
+            </li>
+            <li>Run it, then review each member's evidence and recommendation.</li>
+            <li>Edit if necessary, mark each member reviewed, and confirm the assessment.</li>
+        </ol>
+        <div className="footer_actions">
+            <button onClick={() => setHelpOpen(true)}>Open help</button>
+            <button className="primary" onClick={dismissGuide}>
+                Got it
+            </button>
+        </div>
+    </section>
+)}
                             {teacherError && (
                                 <p role="alert">Teacher information unavailable: {teacherError}</p>
                             )}
@@ -626,7 +685,10 @@ const navigate = (p) => {
                         <button onClick={() => navigate("home")}>‹ Assessments</button>
                     </div>
                     <section className="panel">
-                        <h2>Team</h2>
+                        <h2>
+                            Team overview
+                            {tip("flags", "Flags mark members whose contribution is unusually high or low compared with the rest of the team. A flag is a prompt to look closer, not a judgement.")}
+                        </h2>
                         <div className="two_inputs">
                             <label>
                                 Team
@@ -678,6 +740,7 @@ const navigate = (p) => {
                     <section className="panel compact">
                         <span>
                             <strong>Weighting</strong>
+                            {tip("weights", "How much each metric counts towards the result. The weights always total 100%. Changing one adjusts the others in proportion, and a metric at 0 is excluded.")}
                             <small>
                                 {DEFAULT_KEYS.map((k) => `${labelForMetric(k)} ${newWeights[k]}%`).join(", ")}
                             </small>
@@ -777,6 +840,7 @@ const navigate = (p) => {
                         </div>
                         <div className="evidence_group">
                             <strong>Unclaimed work</strong>
+                            {tip("evidence", "Verified: claimed and backed by repository evidence. Unverified: claimed, but no supporting evidence was found, so check it rather than treating it as false. Unclaimed work: evidence exists that the member did not report. Peer review: what teammates credited.")}
                             <ul>
                                 {member.unclaimed.map((s, i) => (
                                     <li key={i}>{s}</li>
@@ -851,7 +915,10 @@ const navigate = (p) => {
                         </section>
                     )}
                     <section className="panel">
-                        <h2>Assessment confirmation</h2>
+                        <h2>
+                            Assessment confirmation
+                            {tip("confirm", "Confirming needs every member to be marked reviewed. It locks the recommendations and weights.")}
+                        </h2>
                         <p>
                             Status: {assessment.status}
                             {assessment.teacherConfirmed ? " (confirmed and locked)" : ""}
@@ -1032,6 +1099,36 @@ const navigate = (p) => {
                                 {savingWeights ? "Saving..." : "Save"}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+                    {helpOpen && (
+                <div className="modal_backdrop">
+                    <div className="modal">
+                        <div className="modal_heading">
+                            <h2>Help</h2>
+                            <button onClick={() => setHelpOpen(false)}>×</button>
+                        </div>
+                        <h3>What this tool does</h3>
+                        <p>
+                            It compares what each student reports with their repository activity and their peers'
+                            reviews, then recommends an outcome for each member. You make the final decision.
+                        </p>
+                        <h3>Running an assessment</h3>
+                        <ol>
+                            <li>Choose the team and sprint, upload reports and peer reviews, and connect the repository.</li>
+                            <li>Adjust the metric weights if your unit needs different ones.</li>
+                            <li>Run the assessment and wait for the steps to finish. You can cancel at any time.</li>
+                            <li>Review each member's evidence, edit the recommendation if needed, and mark them reviewed.</li>
+                            <li>Confirm the assessment. Confirming locks it.</li>
+                        </ol>
+                        {HELP_DESK_URL && (
+                            <p>
+                                <a href={HELP_DESK_URL} target="_blank" rel="noopener noreferrer">
+                                    Contact the help desk
+                                </a>
+                            </p>
+                        )}
                     </div>
                 </div>
             )}
