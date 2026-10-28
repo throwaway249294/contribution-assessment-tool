@@ -8,12 +8,14 @@ from datetime import datetime
 def prepare_repo(source):
     #arg is a link
     if source.startswith("https://"):
+        #string cleanup
         link = source.rstrip("/")
         parts = link.split("/")
         owner = parts[-2]
         name = parts[-1].removesuffix(".git")
         folder = os.path.join("repos", f"{owner}-{name}")
 
+        #checks if repo exists already
         if os.path.isdir(folder):
             print("Updating existing clone...")
             result = subprocess.run(["git", "-C", folder, "fetch", "--all", "--prune"], capture_output=True, text=True)
@@ -28,8 +30,7 @@ def prepare_repo(source):
 
     #arg is a folder
     if not os.path.isdir(source):
-        print("Repo folder not found. Exiting...")
-        sys.exit(1)
+        raise SystemExit("Repo folder not found. Exiting...")
 
     return source
 
@@ -76,21 +77,20 @@ def extract_commits(folder):
 
     for c in contributors:
         contributors[c]["commits"].sort(key=lambda c: datetime.fromisoformat(c["date"]))
-        print(f"{c} {len(contributors[c]["commits"])}")
 
     return repository
 
 def write_json(data):
-    with open(f"{data["repo"]}.json", "w", encoding="utf-8") as f:
+    os.makedirs("data", exist_ok=True)
+    with open(f"data/{data["repo"]}.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-
+    print(f"Successfully extracted repository data to {data["repo"]}.json")
 
 if __name__ == "__main__":
     # error handling
     if len(sys.argv) != 2:
-        print("Usage: python extract.py <repo_folder or GitHub link>")
-        sys.exit(1)
+        raise SystemExit("Usage: python extract.py <repo_folder or GitHub link>")
 
     folder = prepare_repo(sys.argv[1])
 
