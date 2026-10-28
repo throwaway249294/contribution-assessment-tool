@@ -56,18 +56,20 @@ export async function loadAssessments() {
                 githubUsername: person.githubUsername || "",
                 verified: evidenceText(evidence.verified),
                 unverified: evidenceText(evidence.unverified),
-                wrongly: evidenceText(evidence.unclaimed),
+                unclaimed: evidenceText(evidence.unclaimed),
                 peer: evidenceText(evidence.peerFeedback),
                 recommendation: evaluation?.teacherDecision?.recommendation
                     || evaluation?.aiRecommendation?.summary
                     || "No recommendation available.",
-                evaluationStatus: evaluation?.status || "No evaluation",
+                evaluationStatus: evaluation?.status || "No evaluation", flag: evaluation?.flag || null,
                 reviewed: evaluation?.teacherDecision?.reviewed === true
             };
         });
 
         return {
             id: String(assessment._id),
+            teamId: assessment.teamId ? String(assessment.teamId) : "",
+            sprintNumber: assessment.sprint ?? null,
             title: `${teamName} — Sprint ${assessment.sprint ?? "?"}`,
             unit: assessment.unitCode || team?.unitCode || "",
             team: teamName,
@@ -85,13 +87,13 @@ export async function loadAssessments() {
 }
 
 
-export async function saveEvaluationDecision(evaluationId, recommendation) {
+export async function saveEvaluationDecision(evaluationId, recommendation, reason = "") {
     const response = await fetch(
         `${API_BASE}/evaluations/${encodeURIComponent(evaluationId)}/decision`,
         {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ recommendation })
+            body: JSON.stringify( reason ?{ recommendation, reason } : { recommendation })
         }
     );
 
