@@ -1075,10 +1075,10 @@ function App() {
                             );
                         })}
                         <div className="weight_info">
-                            Undo the last change (Ctrl+Z), or go back to the defaults.
+                            Undo the last change (Ctrl+Z), or go back to the default settings.
                             <span>
                                 <button onClick={undoWeights} disabled={!history.length || weightsLocked}>
-                                    UNDO
+                                    Undo
                                 </button>{" "}
                                 <button onClick={resetWeights} disabled={weightsLocked}>
                                     Reset to default
