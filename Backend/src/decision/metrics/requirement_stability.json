@@ -1,0 +1,14 @@
+{
+  "metric": "requirement_stability",
+  "type": "noul",
+  "definition": "The tasks remained aligned with the agreed requirements without unexpected, unplanned requirement changes. Assess stability separately from how well the student adapted; changes are not necessarily the student's fault.",
+  "positive_criteria": [
+    "Explicitly describes requirements remaining stable during the reporting period",
+    "Shows work following the agreed requirements with only planned clarification"
+  ],
+  "negative_criteria": [
+    "Reports unexpected requirement changes, reversals, or new requests that disrupted the tasks",
+    "Reports rework caused by unplanned changes to requirements"
+  ],
+  "source": "<student report>"
+}

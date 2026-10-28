@@ -1,0 +1,14 @@
+{
+  "metric": "scope_rate",
+  "type": "noul",
+  "definition": "Completed tasks stayed within their expected scope. Compare described planned boundaries with delivered work; do not infer a numerical rate without counts of comparable tasks.",
+  "positive_criteria": [
+    "Completed work matches the stated task boundaries and expected deliverables",
+    "Reports completing tasks without unplanned scope expansion or reduction"
+  ],
+  "negative_criteria": [
+    "Reports unplanned scope expansion or reduced deliverables relative to agreed task boundaries",
+    "Describes tasks drifting beyond their expected scope"
+  ],
+  "source": "<student report>"
+}

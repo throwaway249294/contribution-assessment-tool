@@ -1,0 +1,14 @@
+{
+  "metric": "documentation_knowledge_sharing",
+  "type": "noul",
+  "definition": "The student created or updated documentation or another reusable knowledge source, or explicitly shared implementation knowledge with others.",
+  "positive_criteria": [
+    "Describes writing or updating a README, guide, technical notes, API documentation, or similar knowledge source",
+    "Describes a walkthrough, handover, tutorial, or recorded explanation that shares useful knowledge"
+  ],
+  "negative_criteria": [
+    "Explicitly reports leaving needed documentation or knowledge transfer unfinished",
+    "Mentions using documentation without creating, updating, or sharing knowledge"
+  ],
+  "source": "<student report>"
+}

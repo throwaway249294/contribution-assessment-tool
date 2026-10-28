@@ -1,0 +1,14 @@
+{
+  "metric": "improvement_over_baseline",
+  "type": "noul",
+  "definition": "The student demonstrates improvement against an explicitly described prior result, starting state, or baseline. Do not infer improvement merely from completing new work.",
+  "positive_criteria": [
+    "Describes a baseline and a comparable improved outcome",
+    "Explains a concrete gain in quality, functionality, reliability, or efficiency relative to the starting state"
+  ],
+  "negative_criteria": [
+    "Reports no improvement or a regression against the stated baseline",
+    "Describes activity without evidence of a comparable before-and-after improvement"
+  ],
+  "source": "<student report>"
+}

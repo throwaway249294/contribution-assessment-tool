@@ -1,0 +1,14 @@
+{
+  "metric": "ownership",
+  "type": "noul",
+  "definition": "Determine whether the student took personal responsibility for a specific feature or implementation. Ownership can be assigned or self-initiated and does not require working alone.",
+  "positive_criteria": [
+    "Explicitly identifies a feature or implementation for which the student was responsible",
+    "Describes personally driving a specific implementation through decisions, delivery, or follow-through"
+  ],
+  "negative_criteria": [
+    "Explicitly attributes ownership solely to others",
+    "Mentions participation without identifying any specific responsibility taken by the student"
+  ],
+  "source": "<student report>"
+}
