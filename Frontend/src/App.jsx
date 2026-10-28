@@ -36,14 +36,14 @@ function formatValue(value) {
             .join(", ");
     return String(value);
 }
-const stages = [
+const STAGES = [
     "Checking contributions",
+    "Checking commit history",
     "Verifying claims",
-    "Reading documents",
     "Matching claims to evidence",
-    "Detecting unevidenced work",
     "Flagging outliers",
 ];
+const STAGE_MS = 700;
 function App() {
     const [page, setPage] = useState("home");
     const [assessments, setAssessments] = useState([]);
@@ -56,7 +56,7 @@ function App() {
     const [selectedTeamId, setSelectedTeamId] = useState("");
     const [sprint, setSprint] = useState("2");
     const [createError, setCreateError] = useState("");
-    const [creating, setCreating] = useState(false);
+    const runRef = useRef(null);
     const [memberIndex, setMemberIndex] = useState(0);
     const [manualRecommendation, setManualRecommendation] = useState("");
     const [evidenceNotes, setEvidenceNotes] = useState("");
@@ -72,7 +72,6 @@ function App() {
     const [repo, setRepo] = useState("cos40005-2026/team-04");
     const [docs, setDocs] = useState([]);
     const [stage, setStage] = useState(0);
-    const [seconds, setSeconds] = useState(0);
     const [profiles, setProfiles] = useState([]);
     const [profileId, setProfileId] = useState("");
     const [profileName, setProfileName] = useState("");
@@ -166,6 +165,15 @@ function App() {
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [settingsOpen, history]);
+    useEffect(() => {
+        if (page !== "processing" || !runRef.current) return;
+        if (stage >= STAGES.length) {
+            finishRun();
+            return;
+        }
+        const timer = setTimeout(() => setStage((s) => s + 1), STAGE_MS);
+        return () => clearTimeout(timer);
+    }, [page, stage]);
     const navigate = (p) => {
         setPage(p);
         window.scrollTo(0, 0);
@@ -175,38 +183,70 @@ function App() {
         setMemberIndex(0);
         navigate("assessment");
     };
-    const startRun = async () => {
-        if (creating) return;
+    const startRun = () => {
         setCreateError("");
-        const selected = teams.find((t) => String(t._id) === String(selectedTeamId));
-        if (!selected) {
-            setCreateError("Select an existing MongoDB team.");
+        if (!selectedTeam) {
+            setCreateError("Select a team.");
             return;
         }
         const number = Number(sprint);
         if (!Number.isInteger(number) || number < 1 || number > 999) {
-            setCreateError("Enter a valid sprint number from 1 to 999.");
+            setCreateError("Enter a sprint number from 1 to 999.");
             return;
         }
-        setCreating(true);
+        if (
+            assessments.some(
+                (a) => a.teamId === String(selectedTeam._id) && Number(a.sprintNumber) === number,
+            )
+        ) {
+            setCreateError(
+                `${selectedTeam.teamName} already has an assessment for sprint ${number}. Open it from the home page instead.`,
+            );
+            return;
+        }
+        const unmapped = (selectedTeam.members || []).filter((m) => !String(m.githubUsername || "").trim());
+        if (unmapped.length) {
+            setCreateError(
+                `Every member needs a GitHub account before the run can start. Missing: ${unmapped.map((m) => m.name || m.memberId).join(", ")}.`,
+            );
+            return;
+        }
+        runRef.current = {
+            teamId: String(selectedTeam._id),
+            sprint: number,
+            weights: { ...newWeights },
+            finishing: false,
+        };
+        setStage(0);
+        navigate("processing");
+    };
+    const finishRun = async () => {
+        const run = runRef.current;
+        if (!run || run.finishing) return;
+        run.finishing = true;
         try {
             const created = await createAssessment({
-                teamId: String(selected._id),
-                sprint: number,
-                metricWeights: newWeights,
+                teamId: run.teamId,
+                sprint: run.sprint,
+                metricWeights: run.weights,
             });
             const records = await loadAssessments();
             setAssessments(records);
             setAssessmentId(String(created._id));
             setMemberIndex(0);
-            setStage(0);
-            setSeconds(0);
-            navigate("processing");
+            setDocs([]);
+            runRef.current = null;
+            navigate("assessment");
+            refreshAudit();
         } catch (error) {
+            runRef.current = null;
             setCreateError(error.message);
-        } finally {
-            setCreating(false);
+            navigate("new");
         }
+    };
+    const cancelRun = () => {
+        runRef.current = null;
+        navigate("new");
     };
     const reloadAssessments = async () => {
         const records = await loadAssessments();
@@ -600,7 +640,7 @@ function App() {
                         <label className="upload">
                             Drop files, or browse
                             <input type="file" multiple onChange={upload} />
-                            <span>PDF, DOCX, MD · up to 20 files</span>
+                            <span>PDF, DOCX, MD · up to 20 files · reports and peer reviews</span>
                         </label>
                         {docs.map((d, i) => (
                             <div className="file_row" key={i}>
@@ -628,22 +668,34 @@ function App() {
                     </section>
                     <div className="footer_actions">
                         {createError && <p role="alert">{createError}</p>}
-                        <button className="primary" onClick={startRun} disabled={creating}>
-                            {creating ? "Creating..." : "Run assessment"}
+                        <button className="primary" onClick={startRun}>
+                            Run assessment
                         </button>
                     </div>
                 </main>
             )}
             {page === "processing" && (
                 <main className="narrow">
-                    <h1>Assessment created</h1>
+                    <h1>Assessing contributions</h1>
+                    <p className="preview_note">
+                        Preview: these steps are simulated until the analysis pipeline is connected. Nothing
+                        is saved until they finish.
+                    </p>
                     <section className="panel">
-                        <p>Your draft assessment has been created.</p>
+                        <ol className="stage_list">
+                            {STAGES.map((name, i) => (
+                                <li key={name} className={i < stage ? "done" : i === stage ? "current" : ""}>
+                                    <span className="stage_mark" aria-hidden="true">
+                                        {i < stage ? "✓" : ""}
+                                    </span>
+                                    {name}
+                                </li>
+                            ))}
+                        </ol>
                     </section>
                     <div className="footer_actions">
-                        <button onClick={() => navigate("home")}>Back to assessments</button>
-                        <button className="primary" onClick={() => navigate("assessment")}>
-                            Open draft assessment
+                        <button onClick={cancelRun} disabled={stage >= STAGES.length}>
+                            {stage >= STAGES.length ? "Saving..." : "Cancel run"}
                         </button>
                     </div>
                 </main>

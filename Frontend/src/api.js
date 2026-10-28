@@ -68,6 +68,8 @@ export async function loadAssessments() {
 
         return {
             id: String(assessment._id),
+            teamId: assessment.teamId ? String(assessment.teamId) : "",
+            sprintNumber: assessment.sprint ?? null,
             title: `${teamName} — Sprint ${assessment.sprint ?? "?"}`,
             unit: assessment.unitCode || team?.unitCode || "",
             team: teamName,
