@@ -27,6 +27,15 @@ const labelForMetric = (key) =>
         .replace(/([a-z])([A-Z])/g, "$1 $2")
         .replace(/_/g, " ")
         .replace(/^./, (c) => c.toUpperCase());
+function formatValue(value) {
+    if (value === null || value === undefined || value === "") return "(empty)";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    if (typeof value === "object")
+        return Object.entries(value)
+            .map(([k, v]) => `${labelForMetric(k)} ${v}`)
+            .join(", ");
+    return String(value);
+}
 const stages = [
     "Checking contributions",
     "Verifying claims",
@@ -276,7 +285,7 @@ function App() {
                 const entry = {
                     message: log.action || "Recommendation updated",
                     date: log.createdAt ? new Date(log.createdAt).toLocaleString() : "",
-                    detail: `${log.fieldChanged || "Recommendation"}: ${String(log.previousValue ?? "(empty)")} → ${String(log.newValue ?? "(empty)")}`,
+                    detail: `${log.fieldChanged || "Recommendation"}: ${formatValue(log.previousValue)} → ${formatValue(log.newValue)}`,
                 };
                 if (!grouped[id]) grouped[id] = [];
                 grouped[id].push(entry);
