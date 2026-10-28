@@ -90,6 +90,7 @@ function App() {
     const [editing, setEditing] = useState(false);
     const [edits, setEdits] = useState({});
     const [draft, setDraft] = useState("");
+	const [reason, setReason] = useState("");
     const [expanded, setExpanded] = useState(-1);
     const [audit, setAudit] = useState({});
     const [saving, setSaving] = useState(false);
@@ -112,6 +113,7 @@ function App() {
     const key = assessment.id + "_" + memberIndex;
     const currentEdit = edits[key] || {};
     const memberAudit = audit[String(member.evaluationId)] || [];
+	const refineDirty = page === "refinement" && (draft.trim() !== String(currentEdit.recommendation ?? member.recommendation ?? "").trim || reason.trim() !== "");
     const selectedTeam = teams.find((t) => String(t._id) === String(selectedTeamId));
     const settingsTeam = settingsMode === "new" ? selectedTeam : activeTeam;
     const settingsUnit = settingsTeam?.unitCode || (settingsMode === "new" ? unit : assessment.unit);
@@ -174,7 +176,16 @@ function App() {
         const timer = setTimeout(() => setStage((s) => s + 1), STAGE_MS);
         return () => clearTimeout(timer);
     }, [page, stage]);
-    const navigate = (p) => {
+    useEffect(() => {
+    if (!refineDirty) return;
+    const onLeave = (e) => {
+        e.preventDefault();
+        e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+}, [refineDirty]);
+const navigate = (p) => {
         setPage(p);
         window.scrollTo(0, 0);
     };
@@ -312,10 +323,16 @@ function App() {
     const editMember = () => {
         if (assessment.teacherConfirmed) return;
         setDraft(currentEdit.recommendation ?? member.recommendation);
+		setReason("");
         setSaveError("");
         setEditing(true);
         navigate("refinement");
     };
+	const leaveRefinement = () => {
+		if (refineDirty || !window.confirm("Your changed have not been saved. Leave anyway?")) return;
+		setReason("");
+		navigate("assessment");
+	};
     const refreshAudit = async () => {
         try {
             const logs = await loadAuditLogs();
@@ -356,7 +373,7 @@ function App() {
         if (saving) return;
         setSaving(true);
         try {
-            const saved = await saveEvaluationDecision(member.evaluationId, draft);
+            const saved = await saveEvaluationDecision(member.evaluationId, draft, reason.trim());
             setAssessments((items) =>
                 items.map((item) =>
                     item.id !== assessment.id
@@ -375,6 +392,7 @@ function App() {
                 ),
             );
             setEdits((e) => ({ ...e, [key]: { ...e[key], recommendation: saved.recommendation } }));
+			setReason("");
             await refreshAudit();
             setEditing(false);
             navigate("assessment");
@@ -856,13 +874,23 @@ function App() {
             {page === "refinement" && (
                 <main className="narrow">
                     <div className="top_actions">
-                        <button onClick={() => navigate("assessment")}>‹ Back to assessment</button>
+                        <button onClick={leaveRefinement}>‹ Back to assessment</button>
                     </div>
                     <section className="panel">
                         <h1>Editing recommendation</h1>
                         <label className="text_label">
                             Recommendation
                             <textarea rows="6" value={draft} onChange={(e) => setDraft(e.target.value)} />
+                        </label>
+                        <label className="text_label">
+                            Reason for change (optional)
+                            <textarea
+                                rows="2"
+                                maxLength={1000}
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                placeholder="What did you see that the system did not?"
+                            />
                         </label>
                         {saveError && <p role="alert">{saveError}</p>}
                         <strong>Verified claims:</strong>
@@ -872,7 +900,7 @@ function App() {
                             ))}
                         </ul>
                         <div className="footer_actions">
-                            <button onClick={() => navigate("assessment")}>Cancel</button>
+                            <button onClick={leaveRefinement}>Cancel</button>
                             <button className="primary" onClick={saveMember} disabled={saving}>
                                 {saving ? "Saving..." : "Save"}
                             </button>

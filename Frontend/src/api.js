@@ -87,13 +87,13 @@ export async function loadAssessments() {
 }
 
 
-export async function saveEvaluationDecision(evaluationId, recommendation) {
+export async function saveEvaluationDecision(evaluationId, recommendation, reason = "") {
     const response = await fetch(
         `${API_BASE}/evaluations/${encodeURIComponent(evaluationId)}/decision`,
         {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ recommendation })
+            body: JSON.stringify( reason ?{ recommendation, reason } : { recommendation })
         }
     );
 
