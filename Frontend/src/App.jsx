@@ -36,7 +36,7 @@ function formatValue(value) {
             .join(", ");
     return String(value);
 }
-const HELP_DESK_URL = https://www.swinburneonline.edu.au/current-students/help/
+const HELP_DESK_URL = "https://www.swinburneonline.edu.au/current-students/help/";
 const GUIDE_KEY = "ca_getting_started_dismissed";
 const STAGES = [
     "Checking contributions",
@@ -50,7 +50,12 @@ function HelpTip({ id, openTip, setOpenTip, children }) {
     const open = openTip === id;
     return (
         <span className="help_tip">
-            <button type="button" aria-label="Help" aria-expanded={open} onClick={() => setOpenTip(open ? null : id)}>
+            <button
+                type="button"
+                aria-label="Help"
+                aria-expanded={open}
+                onClick={() => setOpenTip(open ? null : id)}
+            >
                 ?
             </button>
             {open && (
@@ -107,17 +112,17 @@ function App() {
     const [editing, setEditing] = useState(false);
     const [edits, setEdits] = useState({});
     const [draft, setDraft] = useState("");
-	const [reason, setReason] = useState("");
+    const [reason, setReason] = useState("");
     const [expanded, setExpanded] = useState(-1);
-const [openTip, setOpenTip] = useState(null);
-const [helpOpen, setHelpOpen] = useState(false);
-const [showGuide, setShowGuide] = useState(() => {
-    try {
-        return localStorage.getItem(GUIDE_KEY) !== "1";
-    } catch {
-        return true;
-    }
-});
+    const [openTip, setOpenTip] = useState(null);
+    const [helpOpen, setHelpOpen] = useState(false);
+    const [showGuide, setShowGuide] = useState(() => {
+        try {
+            return localStorage.getItem(GUIDE_KEY) !== "1";
+        } catch {
+            return true;
+        }
+    });
     const [audit, setAudit] = useState({});
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
@@ -139,11 +144,14 @@ const [showGuide, setShowGuide] = useState(() => {
     const key = assessment.id + "_" + memberIndex;
     const currentEdit = edits[key] || {};
     const memberAudit = audit[String(member.evaluationId)] || [];
-	const refineDirty = page === "refinement" && (draft.trim() !== String(currentEdit.recommendation ?? member.recommendation ?? "").trim || reason.trim() !== "");
+    const refineDirty =
+        page === "refinement" &&
+        (draft.trim() !== String(currentEdit.recommendation ?? member.recommendation ?? "").trim() ||
+            reason.trim() !== "");
     const selectedTeam = teams.find((t) => String(t._id) === String(selectedTeamId));
     const settingsTeam = settingsMode === "new" ? selectedTeam : activeTeam;
     const settingsUnit = settingsTeam?.unitCode || (settingsMode === "new" ? unit : assessment.unit);
-    const weightsLocked = settingsMode === "assessments" && assessment.teacherConfirmed;
+    const weightsLocked = settingsMode === "assessment" && assessment.teacherConfirmed;
     useEffect(() => {
         let active = true;
         loadTeachers()
@@ -203,17 +211,17 @@ const [showGuide, setShowGuide] = useState(() => {
         return () => clearTimeout(timer);
     }, [page, stage]);
     useEffect(() => {
-    if (!refineDirty) return;
-    const onLeave = (e) => {
-        e.preventDefault();
-        e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", onLeave);
-    return () => window.removeEventListener("beforeunload", onLeave);
-}, [refineDirty]);
-const navigate = (p) => {
-    setPage(p);
-    setOpenTip(null);
+        if (!refineDirty) return;
+        const onLeave = (e) => {
+            e.preventDefault();
+            e.returnValue = "";
+        };
+        window.addEventListener("beforeunload", onLeave);
+        return () => window.removeEventListener("beforeunload", onLeave);
+    }, [refineDirty]);
+    const navigate = (p) => {
+        setPage(p);
+        setOpenTip(null);
         window.scrollTo(0, 0);
     };
     const openAssessment = (a) => {
@@ -221,20 +229,20 @@ const navigate = (p) => {
         setMemberIndex(0);
         navigate("assessment");
     };
-const dismissGuide = () => {
-    setShowGuide(false);
-    try {
-        localStorage.setItem(GUIDE_KEY, "1");
-    } catch {
-        /* storage unavailable */
-    }
-};
-const tip = (id, text) => (
-    <HelpTip id={id} openTip={openTip} setOpenTip={setOpenTip}>
-        {text}
-    </HelpTip>
-);
-const startRun = () => {
+    const dismissGuide = () => {
+        setShowGuide(false);
+        try {
+            localStorage.setItem(GUIDE_KEY, "1");
+        } catch {
+            /* storage unavailable */
+        }
+    };
+    const tip = (id, text) => (
+        <HelpTip id={id} openTip={openTip} setOpenTip={setOpenTip}>
+            {text}
+        </HelpTip>
+    );
+    const startRun = () => {
         setCreateError("");
         if (!selectedTeam) {
             setCreateError("Select a team.");
@@ -363,16 +371,16 @@ const startRun = () => {
     const editMember = () => {
         if (assessment.teacherConfirmed) return;
         setDraft(currentEdit.recommendation ?? member.recommendation);
-		setReason("");
+        setReason("");
         setSaveError("");
         setEditing(true);
         navigate("refinement");
     };
-	const leaveRefinement = () => {
-		if (refineDirty || !window.confirm("Your changed have not been saved. Leave anyway?")) return;
-		setReason("");
-		navigate("assessment");
-	};
+    const leaveRefinement = () => {
+        if (refineDirty && !window.confirm("Your changed have not been saved. Leave anyway?")) return;
+        setReason("");
+        navigate("assessment");
+    };
     const refreshAudit = async () => {
         try {
             const logs = await loadAuditLogs();
@@ -432,7 +440,7 @@ const startRun = () => {
                 ),
             );
             setEdits((e) => ({ ...e, [key]: { ...e[key], recommendation: saved.recommendation } }));
-			setReason("");
+            setReason("");
             await refreshAudit();
             setEditing(false);
             navigate("assessment");
@@ -484,21 +492,33 @@ const startRun = () => {
         setLastAuto([]);
         lastAdjustAt.current = 0;
     };
-    const openSettings = () => {
-        const databaseWeights = assessment.metricWeights || {};
-        const keys = Object.keys(databaseWeights);
+    const openSettings = (mode) => {
+        let keys, values;
+        if (mode === "new") {
+            keys = DEFAULT_KEYS;
+            values = keys.map((k) => newWeights[k] ?? 0);
+        } else {
+            const saved = assessment.metricWeights || {};
+            keys = Object.keys(saved).length ? Object.keys(saved) : DEFAULT_KEYS;
+            values = keys.map((k) => saved[k] ?? DEFAULT_WEIGHTS[k] ?? 0);
+        }
+        setSettingsMode(mode);
         setWeightKeys(keys);
-        setDraftWeights(keys.length ? keys.map((k) => databaseWeights[k]) : [...weights]);
-        setWeightError("");
+        setDraftWeights(values);
         setHistory([]);
-        setAddingMetric(false);
-        setNewMetricName("");
+        setLastAuto([]);
+        setWeightError("");
         setProfileId("");
         setProfileName("");
+        lastAdjustAt.current = 0;
         loadWeightProfiles()
             .then(setProfiles)
             .catch((error) => setWeightError(error.message));
         setSettingsOpen(true);
+    };
+    const openConfiguration = () => {
+        navigate("new");
+        openSettings("new");
     };
     const applicableProfiles = profiles.filter(
         (profile) =>
@@ -609,27 +629,33 @@ const startRun = () => {
                             <button onClick={openConfiguration}>Configuration</button>
                             <button onClick={() => navigate("audit")}>Audit Log</button>
                             <button onClick={() => setHelpOpen(true)}>Help</button>
-</aside>
+                        </aside>
                         <main className="home_content">
                             <h1>Assessments</h1>
-{showGuide && (
-    <section className="panel">
-        <h2>Getting started</h2>
-        <ol>
-            <li>
-                Create a new assessment, select the team and the sprint and upload documents as you see fit
-            </li>
-            <li>Run it, then review each member's evidence and recommendation.</li>
-            <li>Edit if necessary, mark each member reviewed, and confirm the assessment.</li>
-        </ol>
-        <div className="footer_actions">
-            <button onClick={() => setHelpOpen(true)}>Open help</button>
-            <button className="primary" onClick={dismissGuide}>
-                Got it
-            </button>
-        </div>
-    </section>
-)}
+                            {showGuide && (
+                                <section className="panel">
+                                    <h2>Getting started</h2>
+                                    <ol>
+                                        <li>
+                                            Create a new assessment, select the team and the sprint and upload
+                                            documents as you see fit
+                                        </li>
+                                        <li>
+                                            Run it, then review each member's evidence and recommendation.
+                                        </li>
+                                        <li>
+                                            Edit if necessary, mark each member reviewed, and confirm the
+                                            assessment.
+                                        </li>
+                                    </ol>
+                                    <div className="footer_actions">
+                                        <button onClick={() => setHelpOpen(true)}>Open help</button>
+                                        <button className="primary" onClick={dismissGuide}>
+                                            Got it
+                                        </button>
+                                    </div>
+                                </section>
+                            )}
                             {teacherError && (
                                 <p role="alert">Teacher information unavailable: {teacherError}</p>
                             )}
@@ -685,10 +711,7 @@ const startRun = () => {
                         <button onClick={() => navigate("home")}>‹ Assessments</button>
                     </div>
                     <section className="panel">
-                        <h2>
-                            Team overview
-                            {tip("flags", "Flags mark members whose contribution is unusually high or low compared with the rest of the team. A flag is a prompt to look closer, not a judgement.")}
-                        </h2>
+                        <h2>Team</h2>
                         <div className="two_inputs">
                             <label>
                                 Team
@@ -740,7 +763,10 @@ const startRun = () => {
                     <section className="panel compact">
                         <span>
                             <strong>Weighting</strong>
-                            {tip("weights", "How much each metric counts towards the result. The weights always total 100%. Changing one adjusts the others in proportion, and a metric at 0 is excluded.")}
+                            {tip(
+                                "weights",
+                                "How much each metric counts towards the result. The weights always total 100%. Changing one adjusts the others in proportion, and a metric at 0 is excluded.",
+                            )}
                             <small>
                                 {DEFAULT_KEYS.map((k) => `${labelForMetric(k)} ${newWeights[k]}%`).join(", ")}
                             </small>
@@ -755,32 +781,34 @@ const startRun = () => {
                     </div>
                 </main>
             )}
-            {page === "processing" && (
-                <main className="narrow">
-                    <h1>Assessing contributions</h1>
-                    <p className="preview_note">
-                        Preview: these steps are simulated until the analysis pipeline is connected. Nothing
-                        is saved until they finish.
-                    </p>
-                    <section className="panel">
-                        <ol className="stage_list">
-                            {STAGES.map((name, i) => (
-                                <li key={name} className={i < stage ? "done" : i === stage ? "current" : ""}>
-                                    <span className="stage_mark" aria-hidden="true">
-                                        {i < stage ? "✓" : ""}
-                                    </span>
-                                    {name}
-                                </li>
-                            ))}
-                        </ol>
-                    </section>
-                    <div className="footer_actions">
-                        <button onClick={cancelRun} disabled={stage >= STAGES.length}>
-                            {stage >= STAGES.length ? "Saving..." : "Cancel run"}
+            <section className="panel">
+                <h2>
+                    Team overview
+                    {tip(
+                        "flags",
+                        "Flags mark members whose contribution is unusually high or low compared with the rest of the team. A flag is a prompt to look closer, not a judgement.",
+                    )}
+                </h2>
+                <div className="overview">
+                    {assessment.members.map((m, i) => (
+                        <button
+                            key={m.id || i}
+                            className={"overview_row" + (i === memberIndex ? " selected" : "")}
+                            onClick={() => setMemberIndex(i)}
+                        >
+                            <strong>{m.name}</strong>
+                            <span>
+                                {m.evaluationId
+                                    ? m.reviewed
+                                        ? "Reviewed"
+                                        : "Not reviewed"
+                                    : "No evaluation"}
+                            </span>
+                            <span className={m.flag ? "flag" : "muted"}>{m.flag || "No flag"}</span>
                         </button>
-                    </div>
-                </main>
-            )}
+                    ))}
+                </div>
+            </section>
             {page === "assessment" && (
                 <main className="narrow">
                     <div className="top_actions">
@@ -795,31 +823,34 @@ const startRun = () => {
                     </div>
                     <p>Educator: {teacherLabel}</p>
                     {page === "processing" && (
-    <main className="narrow">
-        <h1>Assessing contributions</h1>
-        <p className="preview_note">
-            Preview: these steps are simulated until the analysis pipeline is connected. Nothing is saved
-            until they finish.
-        </p>
-        <section className="panel">
-            <ol className="stage_list">
-                {STAGES.map((name, i) => (
-                    <li key={name} className={i < stage ? "done" : i === stage ? "current" : ""}>
-                        <span className="stage_mark" aria-hidden="true">
-                            {i < stage ? "✓" : ""}
-                        </span>
-                        {name}
-                    </li>
-                ))}
-            </ol>
-        </section>
-        <div className="footer_actions">
-            <button onClick={cancelRun} disabled={stage >= STAGES.length}>
-                {stage >= STAGES.length ? "Saving..." : "Cancel run"}
-            </button>
-        </div>
-    </main>
-)}
+                        <main className="narrow">
+                            <h1>Assessing contributions</h1>
+                            <p className="preview_note">
+                                Preview: these steps are simulated until the analysis pipeline is connected.
+                                Nothing is saved until they finish.
+                            </p>
+                            <section className="panel">
+                                <ol className="stage_list">
+                                    {STAGES.map((name, i) => (
+                                        <li
+                                            key={name}
+                                            className={i < stage ? "done" : i === stage ? "current" : ""}
+                                        >
+                                            <span className="stage_mark" aria-hidden="true">
+                                                {i < stage ? "✓" : ""}
+                                            </span>
+                                            {name}
+                                        </li>
+                                    ))}
+                                </ol>
+                            </section>
+                            <div className="footer_actions">
+                                <button onClick={cancelRun} disabled={stage >= STAGES.length}>
+                                    {stage >= STAGES.length ? "Saving..." : "Cancel run"}
+                                </button>
+                            </div>
+                        </main>
+                    )}
                     <section className="panel">
                         <h2>{member.name}</h2>
                         <div className="evidence_group">
@@ -840,7 +871,10 @@ const startRun = () => {
                         </div>
                         <div className="evidence_group">
                             <strong>Unclaimed work</strong>
-                            {tip("evidence", "Verified: claimed and backed by repository evidence. Unverified: claimed, but no supporting evidence was found, so check it rather than treating it as false. Unclaimed work: evidence exists that the member did not report. Peer review: what teammates credited.")}
+                            {tip(
+                                "evidence",
+                                "Verified: claimed and backed by repository evidence. Unverified: claimed, but no supporting evidence was found, so check it rather than treating it as false. Unclaimed work: evidence exists that the member did not report. Peer review: what teammates credited.",
+                            )}
                             <ul>
                                 {member.unclaimed.map((s, i) => (
                                     <li key={i}>{s}</li>
@@ -917,7 +951,10 @@ const startRun = () => {
                     <section className="panel">
                         <h2>
                             Assessment confirmation
-                            {tip("confirm", "Confirming needs every member to be marked reviewed. It locks the recommendations and weights.")}
+                            {tip(
+                                "confirm",
+                                "Confirming needs every member to be marked reviewed. It locks the recommendations and weights.",
+                            )}
                         </h2>
                         <p>
                             Status: {assessment.status}
@@ -1102,7 +1139,7 @@ const startRun = () => {
                     </div>
                 </div>
             )}
-                    {helpOpen && (
+            {helpOpen && (
                 <div className="modal_backdrop">
                     <div className="modal">
                         <div className="modal_heading">
@@ -1111,15 +1148,25 @@ const startRun = () => {
                         </div>
                         <h3>What this tool does</h3>
                         <p>
-                            It compares what each student reports with their repository activity and their peers'
-                            reviews, then recommends an outcome for each member. You make the final decision.
+                            It compares what each student reports with their repository activity and their
+                            peers' reviews, then recommends an outcome for each member. You make the final
+                            decision.
                         </p>
                         <h3>Running an assessment</h3>
                         <ol>
-                            <li>Choose the team and sprint, upload reports and peer reviews, and connect the repository.</li>
+                            <li>
+                                Choose the team and sprint, upload reports and peer reviews, and connect the
+                                repository.
+                            </li>
                             <li>Adjust the metric weights if your unit needs different ones.</li>
-                            <li>Run the assessment and wait for the steps to finish. You can cancel at any time.</li>
-                            <li>Review each member's evidence, edit the recommendation if needed, and mark them reviewed.</li>
+                            <li>
+                                Run the assessment and wait for the steps to finish. You can cancel at any
+                                time.
+                            </li>
+                            <li>
+                                Review each member's evidence, edit the recommendation if needed, and mark
+                                them reviewed.
+                            </li>
                             <li>Confirm the assessment. Confirming locks it.</li>
                         </ol>
                         {HELP_DESK_URL && (
